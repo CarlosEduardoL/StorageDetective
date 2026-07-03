@@ -1,4 +1,4 @@
-package model
+package vfs
 
 // UpLink is the synthetic ".." entry prepended to a listing when the current directory has a
 // parent. It implements FileSystemItem but carries no file data of its own.

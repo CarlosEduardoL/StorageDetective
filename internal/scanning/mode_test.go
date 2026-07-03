@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/SolracHQ/stex/internal/config"
-	"github.com/SolracHQ/stex/internal/model"
+	"github.com/SolracHQ/stex/internal/vfs"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -25,7 +25,7 @@ func TestLoadingStartsInProgress(t *testing.T) {
 }
 
 func TestLoadingInitReturnsTick(t *testing.T) {
-	l := &Loading{state: &model.ScanState{}}
+	l := &Loading{state: &vfs.ScanState{}}
 	cmd := l.Init()
 	if cmd == nil {
 		t.Fatal("expected tick command from Init")
@@ -33,7 +33,7 @@ func TestLoadingInitReturnsTick(t *testing.T) {
 }
 
 func TestLoadingReschedulesTickWhileScanning(t *testing.T) {
-	l := &Loading{state: &model.ScanState{}}
+	l := &Loading{state: &vfs.ScanState{}}
 	next, cmd := l.Update(scanTickMsg{})
 	if cmd == nil {
 		t.Fatal("expected tick command")
@@ -48,8 +48,8 @@ func TestLoadingReturnsAppOnScanComplete(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(tmp, "f.txt"), []byte("hi"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	state := &model.ScanState{}
-	model.BuildTree(tmp, state)
+	state := &vfs.ScanState{}
+	vfs.BuildTree(tmp, state)
 	if state.Result == nil {
 		t.Fatal("scan produced no root")
 	}
@@ -65,7 +65,7 @@ func TestLoadingReturnsAppOnScanComplete(t *testing.T) {
 }
 
 func TestLoadingViewBlankWhenNoDims(t *testing.T) {
-	l := &Loading{state: &model.ScanState{}}
+	l := &Loading{state: &vfs.ScanState{}}
 	v := l.View()
 	if v.Content != "" {
 		t.Fatalf("expected empty view, got %q", v.Content)
@@ -73,7 +73,7 @@ func TestLoadingViewBlankWhenNoDims(t *testing.T) {
 }
 
 func TestLoadingViewRendersAfterResize(t *testing.T) {
-	l := &Loading{state: &model.ScanState{}}
+	l := &Loading{state: &vfs.ScanState{}}
 	l.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 	v := l.View()
 	if v.Content == "" {
@@ -82,7 +82,7 @@ func TestLoadingViewRendersAfterResize(t *testing.T) {
 }
 
 func TestLoadingStoresWindowSize(t *testing.T) {
-	l := &Loading{state: &model.ScanState{}}
+	l := &Loading{state: &vfs.ScanState{}}
 	l.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	if l.width != 120 || l.height != 40 {
 		t.Fatalf("expected 120x40, got %dx%d", l.width, l.height)

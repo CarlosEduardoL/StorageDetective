@@ -139,12 +139,16 @@ func handleMouseClick(ctx *core.Context, msg tea.MouseClickMsg) {
 // the sort order, clicking a different column switches to sorting by that column.
 func handleHeaderClick(ctx *core.Context, clickX int) {
 	cols := ctx.Table.Columns()
-	x := 1
+	x := 0
 	for i, col := range cols {
 		if clickX >= x && clickX < x+col.Width {
 			switch i {
 			case 1:
-				ctx.Config.SortBy.Toggle()
+				if ctx.Config.SortBy == config.SortBySize {
+					ctx.Config.SortOrder.Toggle()
+				} else {
+					ctx.Config.SortBy = config.SortBySize
+				}
 			case 2:
 				if ctx.Config.SortBy == config.SortByName {
 					ctx.Config.SortOrder.Toggle()

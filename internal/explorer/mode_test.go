@@ -9,7 +9,7 @@ import (
 
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
-	stexmodel "github.com/SolracHQ/stex/internal/model"
+	"github.com/SolracHQ/stex/internal/vfs"
 	"github.com/SolracHQ/stex/internal/styles"
 
 	"charm.land/bubbles/v2/key"
@@ -19,7 +19,7 @@ import (
 
 // buildTestTree creates a small tree in a temp dir, runs the
 // async scan synchronously, and returns the scanned root.
-func buildTestTree(t *testing.T) *stexmodel.Dir {
+func buildTestTree(t *testing.T) *vfs.Dir {
 	t.Helper()
 	tmp := t.TempDir()
 	if err := os.WriteFile(filepath.Join(tmp, "a.txt"), []byte("aaa"), 0o644); err != nil {
@@ -34,8 +34,8 @@ func buildTestTree(t *testing.T) *stexmodel.Dir {
 	if err := os.WriteFile(filepath.Join(tmp, "sub", "c.txt"), []byte("cc"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	state := &stexmodel.ScanState{}
-	stexmodel.BuildTree(tmp, state)
+	state := &vfs.ScanState{}
+	vfs.BuildTree(tmp, state)
 	if state.Result == nil {
 		t.Fatal("scan produced no root")
 	}
@@ -137,7 +137,7 @@ func TestExplorerEnterOpensDirectory(t *testing.T) {
 	e := Explorer{}
 
 	for i, item := range ctx.Items {
-		if _, ok := item.(*stexmodel.Dir); ok {
+		if _, ok := item.(*vfs.Dir); ok {
 			ctx.Table.SetCursor(i)
 			break
 		}
@@ -156,7 +156,7 @@ func TestExplorerGoToParent(t *testing.T) {
 	e := Explorer{}
 
 	for i, item := range ctx.Items {
-		if _, ok := item.(*stexmodel.Dir); ok {
+		if _, ok := item.(*vfs.Dir); ok {
 			ctx.Table.SetCursor(i)
 			break
 		}

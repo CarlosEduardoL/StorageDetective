@@ -16,7 +16,7 @@ import (
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
 	"github.com/SolracHQ/stex/internal/explorer"
-	"github.com/SolracHQ/stex/internal/model"
+	"github.com/SolracHQ/stex/internal/vfs"
 	"github.com/SolracHQ/stex/internal/styles"
 
 	"charm.land/bubbles/v2/key"
@@ -36,7 +36,7 @@ type App struct {
 // New constructs the top level Bubble Tea model with the given path, resolved config, and
 // scanned root directory. It starts in the explorer mode and dispatches to whatever mode the
 // user activates.
-func New(path string, cfg config.Config, root *model.Dir) tea.Model {
+func New(path string, cfg config.Config, root *vfs.Dir) tea.Model {
 	help := styles.HelpDefaults()
 
 	table := table.New(

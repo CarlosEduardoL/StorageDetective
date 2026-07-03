@@ -7,7 +7,7 @@ import (
 
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
-	stexmodel "github.com/SolracHQ/stex/internal/model"
+	"github.com/SolracHQ/stex/internal/vfs"
 	"github.com/SolracHQ/stex/internal/styles"
 	"github.com/SolracHQ/stex/internal/testutil"
 
@@ -16,7 +16,7 @@ import (
 )
 
 // buildTestTree creates a small tree in a temp dir, scans it, and returns the root.
-func buildTestTree(t *testing.T) *stexmodel.Dir {
+func buildTestTree(t *testing.T) *vfs.Dir {
 	t.Helper()
 	tmp := t.TempDir()
 	for _, name := range []string{"alpha.txt", "beta.txt", "gamma.txt"} {
@@ -24,8 +24,8 @@ func buildTestTree(t *testing.T) *stexmodel.Dir {
 			t.Fatal(err)
 		}
 	}
-	state := &stexmodel.ScanState{}
-	stexmodel.BuildTree(tmp, state)
+	state := &vfs.ScanState{}
+	vfs.BuildTree(tmp, state)
 	return state.Result
 }
 

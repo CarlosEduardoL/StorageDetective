@@ -11,7 +11,7 @@ import (
 	"github.com/SolracHQ/stex/internal/app"
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
-	"github.com/SolracHQ/stex/internal/model"
+	"github.com/SolracHQ/stex/internal/vfs"
 
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
@@ -32,7 +32,7 @@ type scanTickMsg struct{}
 type Loading struct {
 	path   string
 	cfg    config.Config
-	state  *model.ScanState
+	state  *vfs.ScanState
 	width  int
 	height int
 	quit   key.Binding
@@ -41,8 +41,8 @@ type Loading struct {
 // New starts a background scan of path with the given resolved config and returns the Loading
 // model bound to its ScanState. The caller passes it to tea.NewProgram.
 func New(path string, cfg config.Config) *Loading {
-	state := &model.ScanState{}
-	go model.BuildTree(path, state)
+	state := &vfs.ScanState{}
+	go vfs.BuildTree(path, state)
 	return &Loading{
 		path:  path,
 		cfg:   cfg,

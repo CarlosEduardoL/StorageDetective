@@ -9,7 +9,7 @@ package core
 
 import (
 	"github.com/SolracHQ/stex/internal/config"
-	"github.com/SolracHQ/stex/internal/model"
+	"github.com/SolracHQ/stex/internal/vfs"
 
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/table"
@@ -22,12 +22,12 @@ type Context struct {
 	Width, Height int
 	Path          string
 
-	Root, Current *model.Dir
+	Root, Current *vfs.Dir
 	Config        config.Config
 
 	Table table.Model
 	Info  InfoState
-	Items []model.FileSystemItem
+	Items []vfs.FileSystemItem
 
 	Help help.Model
 	Keys Keys

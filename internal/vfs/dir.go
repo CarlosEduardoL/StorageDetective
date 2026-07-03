@@ -1,4 +1,4 @@
-package model
+package vfs
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 )
 
 // uidCounter is a process wide counter used to mint stable UIDs for every Dir and File in the
-// model. UIDs only need to be unique within a single run, they are not persisted.
+// tree. UIDs only need to be unique within a single run, they are not persisted.
 var uidCounter atomic.Uint64
 
 func nextUID() uint64 {

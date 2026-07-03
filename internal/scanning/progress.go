@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/SolracHQ/stex/internal/model"
+	"github.com/SolracHQ/stex/internal/vfs"
 	"github.com/SolracHQ/stex/internal/styles"
 )
 
@@ -23,7 +23,7 @@ const (
 
 // progressBox renders the progress dialog framed by the scan border style. width and height
 // are the full terminal dimensions, the dialog is centered inside.
-func progressBox(state *model.ScanState, width, height int) string {
+func progressBox(state *vfs.ScanState, width, height int) string {
 	innerWidth := width - 2
 	innerHeight := max(height-loadingMargin, minDialogHeight)
 	progress := progressBody(state, innerWidth, innerHeight)
@@ -33,7 +33,7 @@ func progressBox(state *model.ScanState, width, height int) string {
 // progressBody renders the body of the progress dialog. It shows the current path, the running
 // item count, the running total size, and the last few warnings when the scan has encountered
 // permission problems.
-func progressBody(state *model.ScanState, width, height int) string {
+func progressBody(state *vfs.ScanState, width, height int) string {
 	state.Mu.Lock()
 	currentPath := state.CurrentPath
 	total := state.TotalItems

@@ -7,14 +7,14 @@ import (
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
 	"github.com/SolracHQ/stex/internal/explorer"
-	"github.com/SolracHQ/stex/internal/model"
+	"github.com/SolracHQ/stex/internal/vfs"
 	"github.com/SolracHQ/stex/internal/testutil"
 
 	tea "charm.land/bubbletea/v2"
 )
 
 func TestAppNewBuildsContext(t *testing.T) {
-	root := &model.Dir{}
+	root := &vfs.Dir{}
 	m := New(".", config.DefaultConfig(), root)
 	a, ok := m.(*App)
 	if !ok {
@@ -32,7 +32,7 @@ func TestAppNewBuildsContext(t *testing.T) {
 }
 
 func TestAppFirstModeIsExplorer(t *testing.T) {
-	root := &model.Dir{}
+	root := &vfs.Dir{}
 	m := New(".", config.DefaultConfig(), root)
 	a := m.(*App)
 	if a.mode == nil {
@@ -44,7 +44,7 @@ func TestAppFirstModeIsExplorer(t *testing.T) {
 }
 
 func TestAppTableFocusedAtStart(t *testing.T) {
-	root := &model.Dir{}
+	root := &vfs.Dir{}
 	m := New(".", config.DefaultConfig(), root)
 	a := m.(*App)
 	if !a.ctx.Table.Focused() {

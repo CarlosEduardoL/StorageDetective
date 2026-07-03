@@ -1,4 +1,4 @@
-package model
+package vfs
 
 import (
 	"sort"

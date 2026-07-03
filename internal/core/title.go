@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/SolracHQ/stex/internal/config"
-	"github.com/SolracHQ/stex/internal/model"
+	"github.com/SolracHQ/stex/internal/vfs"
 )
 
 // Title renders the title bar that sits above the file listing. The format is, in wide mode,
@@ -15,7 +15,7 @@ import (
 // width is the full width of the title bar in cells. The path segment is shortened from the left
 // with "/.../" when it does not fit. grouping is a human readable label like "mixed" or "files
 // first" that appears on the left side.
-func Title(dir *model.Dir, width int, showIcons bool, grouping string) string {
+func Title(dir *vfs.Dir, width int, showIcons bool, grouping string) string {
 	if dir == nil {
 		return ""
 	}

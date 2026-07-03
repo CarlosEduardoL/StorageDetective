@@ -5,7 +5,7 @@ import (
 	"math"
 
 	"github.com/SolracHQ/stex/internal/config"
-	stexmodel "github.com/SolracHQ/stex/internal/model"
+	"github.com/SolracHQ/stex/internal/vfs"
 
 	"charm.land/bubbles/v2/table"
 )
@@ -56,7 +56,7 @@ func buildColumns(ctx *Context) {
 }
 
 // buildRows transforms items into bubbletea table rows and sets them on the table.
-func buildRows(ctx *Context, items []stexmodel.FileSystemItem) {
+func buildRows(ctx *Context, items []vfs.FileSystemItem) {
 	rows := make([]table.Row, 0, len(items))
 	for _, item := range items {
 		rows = append(rows, itemToRow(item, ctx.Config.ShowIcons, ctx.Current))
@@ -65,22 +65,22 @@ func buildRows(ctx *Context, items []stexmodel.FileSystemItem) {
 }
 
 // itemToRow converts a single item to a table row.
-func itemToRow(item stexmodel.FileSystemItem, showIcons bool, parent *stexmodel.Dir) table.Row {
+func itemToRow(item vfs.FileSystemItem, showIcons bool, parent *vfs.Dir) table.Row {
 	switch item.(type) {
-	case *stexmodel.File, *stexmodel.Dir:
-		var parentSize stexmodel.Size
+	case *vfs.File, *vfs.Dir:
+		var parentSize vfs.Size
 		if parent != nil {
 			parentSize = parent.Size()
 		}
 		return buildRow(item.Name(), item.Icon(), item.Size(), parentSize, showIcons)
-	case *stexmodel.UpLink:
+	case *vfs.UpLink:
 		return table.Row{"", "", "   ..  "}
 	}
 	return table.Row{}
 }
 
 // buildRow formats a single data row for the table.
-func buildRow(name, emoji string, size, parentSize stexmodel.Size, showIcons bool) table.Row {
+func buildRow(name, emoji string, size, parentSize vfs.Size, showIcons bool) table.Row {
 	percent := size.PercentOf(parentSize)
 	gradientCode := gradientANSI(percent)
 	if showIcons {
@@ -88,8 +88,8 @@ func buildRow(name, emoji string, size, parentSize stexmodel.Size, showIcons boo
 	}
 	return table.Row{
 		gradientCode + fmt.Sprintf("%5.2f%%", percent) + "\033[39m",
-		gradientCode + " " + size.String() + " \033[39m",
-		" " + name + " ",
+		gradientCode + size.String() + " \033[39m",
+		name + " ",
 	}
 }
 

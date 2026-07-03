@@ -1,4 +1,4 @@
-package model
+package vfs
 
 // File represents a regular file in the scanned tree. A File is always owned by exactly one
 // parent Dir, the parent's files map holds the reference keyed by the file's base name.
@@ -25,7 +25,7 @@ func (file *File) Size() Size { return file.size }
 // FullPath returns the absolute path of the file on disk.
 func (file *File) FullPath() string { return file.fullPath }
 
-// ParentDir returns the directory that owns this file. Never nil since every file in the model
+// ParentDir returns the directory that owns this file. Never nil since every file in the tree
 // has a parent.
 func (file *File) ParentDir() *Dir { return file.parent }
 

@@ -2,7 +2,7 @@ package explorer
 
 import (
 	"github.com/SolracHQ/stex/internal/core"
-	stexmodel "github.com/SolracHQ/stex/internal/model"
+	"github.com/SolracHQ/stex/internal/vfs"
 )
 
 // enterSelected opens the currently selected directory or navigates up when the cursor is on
@@ -21,9 +21,9 @@ func enterSelected(ctx *core.Context) {
 	ctx.Current.SetLastSelectedUID(ctx.Items[idx].UID())
 
 	switch item := ctx.Items[idx].(type) {
-	case *stexmodel.Dir:
+	case *vfs.Dir:
 		ctx.Current = item
-	case *stexmodel.UpLink:
+	case *vfs.UpLink:
 		ctx.Current = item.ParentDir()
 	default:
 		return

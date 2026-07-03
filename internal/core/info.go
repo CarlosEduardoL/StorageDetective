@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/SolracHQ/stex/internal/config"
-	"github.com/SolracHQ/stex/internal/model"
+	"github.com/SolracHQ/stex/internal/vfs"
 )
 
 // FileInfo holds the metadata that the right pane shows for a single file. The fields mirror
@@ -17,7 +17,7 @@ import (
 type FileInfo struct {
 	Name          string
 	Extension     string
-	Size          model.Size
+	Size          vfs.Size
 	ModTime       string
 	Permissions   string
 	IsSymlink     bool
@@ -37,7 +37,7 @@ func NewFileInfo(path string) *FileInfo {
 	out := &FileInfo{
 		Name:        filepath.Base(path),
 		Extension:   filepath.Ext(path),
-		Size:        model.Size(info.Size()),
+		Size:        vfs.Size(info.Size()),
 		ModTime:     info.ModTime().Format("02 Jan 2006 15:04"),
 		Permissions: info.Mode().String(),
 		IsDir:       info.IsDir(),
@@ -73,8 +73,8 @@ func detectMIME(path string) string {
 // ChildrenInfo holds the largest direct children of a directory for the "Largest Children"
 // segment of the right pane.
 type ChildrenInfo struct {
-	Items     []model.FileSystemItem
-	TotalSize model.Size
+	Items     []vfs.FileSystemItem
+	TotalSize vfs.Size
 }
 
 // RenderFileInfo renders the right pane for a file. width and height are the cell budget for
@@ -110,7 +110,7 @@ func RenderFileInfo(info *FileInfo, width, height int) string {
 // which the caller passes in separately so the size of the directory can come from the model
 // (which has it cached) instead of being re stat'd. The children segment shows the top n items
 // from children, sorted by size.
-func RenderDirInfo(info *FileInfo, dirSize model.Size, children *ChildrenInfo, width, height int) string {
+func RenderDirInfo(info *FileInfo, dirSize vfs.Size, children *ChildrenInfo, width, height int) string {
 	if info == nil {
 		return centered("No info available", width, height)
 	}
@@ -206,13 +206,13 @@ func UpdateInfo(ctx *Context) {
 	}
 	ctx.Info.Path = path
 
-	if _, ok := item.(*model.UpLink); ok {
+	if _, ok := item.(*vfs.UpLink); ok {
 		ctx.Info.Content = ""
 		return
 	}
 
 	info := NewFileInfo(path)
-	if dir, ok := item.(*model.Dir); ok {
+	if dir, ok := item.(*vfs.Dir); ok {
 		children := TopChildren(dir, MaxTopChildren)
 		ctx.Info.Content = RenderDirInfo(info, dir.Size(), children, InfoPanelWidth, InfoPanelHeight)
 	} else {
@@ -223,7 +223,7 @@ func UpdateInfo(ctx *Context) {
 // TopChildren returns the n largest direct children of dir, sorted by size descending, with
 // the sum of their sizes. Used to populate the "Largest Children" segment of the directory
 // info pane.
-func TopChildren(dir *model.Dir, n int) *ChildrenInfo {
+func TopChildren(dir *vfs.Dir, n int) *ChildrenInfo {
 	if dir == nil || n <= 0 {
 		return nil
 	}
@@ -233,16 +233,16 @@ func TopChildren(dir *model.Dir, n int) *ChildrenInfo {
 		Grouping:  config.Mixed,
 	}
 	items := dir.ComputeItems(cfg)
-	filtered := make([]model.FileSystemItem, 0, len(items))
+	filtered := make([]vfs.FileSystemItem, 0, len(items))
 	for _, item := range items {
-		if _, ok := item.(*model.UpLink); !ok {
+		if _, ok := item.(*vfs.UpLink); !ok {
 			filtered = append(filtered, item)
 		}
 	}
 	if len(filtered) > n {
 		filtered = filtered[:n]
 	}
-	var total model.Size
+	var total vfs.Size
 	for _, item := range filtered {
 		total += item.Size()
 	}
