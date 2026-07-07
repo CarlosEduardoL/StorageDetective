@@ -8,9 +8,9 @@ import (
 
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
-	"github.com/SolracHQ/stex/internal/vfs"
 	"github.com/SolracHQ/stex/internal/styles"
 	"github.com/SolracHQ/stex/internal/testutil"
+	"github.com/SolracHQ/stex/internal/vfs"
 
 	"charm.land/bubbles/v2/table"
 	tea "charm.land/bubbletea/v2"
@@ -44,7 +44,6 @@ func newCtx(t *testing.T) *core.Context {
 		Current: root,
 		Config:  cfg,
 		Table:   tbl,
-		Keys:    core.DefaultKeys(),
 	}
 }
 

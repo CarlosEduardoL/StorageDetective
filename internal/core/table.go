@@ -12,23 +12,14 @@ import (
 
 // Column widths used when building the table columns.
 const (
-	defaultNameWidth = 40
-	sizePctWidth     = 9
-	sizeWidth        = 12
+	sizePctWidth = 9
+	sizeWidth    = 12
 )
 
 // buildColumns sets the table column headers and widths based on the sort direction.
 func buildColumns(ctx *Context) {
-	cols := ctx.Table.Columns()
-	nameWidth := defaultNameWidth
-	if len(cols) > 2 && cols[2].Width > 0 {
-		nameWidth = cols[2].Width
-	}
-	if w := ctx.Width - 2; w > 0 {
-		if fit := w - sizePctWidth - sizeWidth - 2; fit > nameWidth {
-			nameWidth = fit
-		}
-	}
+	innerWidth := ctx.Width - 2
+	nameWidth := max(innerWidth-sizePctWidth-sizeWidth, 1)
 
 	var sizeLabel, nameLabel string
 	switch ctx.Config.SortBy {

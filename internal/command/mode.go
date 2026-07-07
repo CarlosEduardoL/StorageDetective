@@ -11,6 +11,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
+	"github.com/SolracHQ/stex/internal/debug"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -30,22 +31,25 @@ var commands = map[string]cmdDef{
 	},
 	"save": {
 		run: func(ctx *core.Context, arg string, returnTo core.Mode) (core.Mode, tea.Cmd) {
-			_ = ctx.Config.Save()
-			return returnTo, nil
+			if err := ctx.Config.Save(); err != nil {
+				return returnTo, core.NewNotifyCmd("Save failed", err.Error(), core.NotifyError)
+			}
+			return returnTo, core.NewNotifyCmd("Config saved", "", core.NotifyInfo)
 		},
 	},
 	"sort": {
 		args: []string{"ascending", "descending"},
 		run: func(ctx *core.Context, arg string, returnTo core.Mode) (core.Mode, tea.Cmd) {
 			switch arg {
-			case "asc", "ascending":
+			case "ascending":
 				ctx.Config.SortOrder = config.Ascending
-			case "desc", "descending":
+				return returnTo, core.NewNotifyCmd("Sort order", "Ascending", core.NotifyInfo)
+			case "descending":
 				ctx.Config.SortOrder = config.Descending
+				return returnTo, core.NewNotifyCmd("Sort order", "Descending", core.NotifyInfo)
 			default:
 				return returnTo, nil
 			}
-			return returnTo, nil
 		},
 	},
 	"sortby": {
@@ -54,12 +58,13 @@ var commands = map[string]cmdDef{
 			switch arg {
 			case "name":
 				ctx.Config.SortBy = config.SortByName
+				return returnTo, core.NewNotifyCmd("Sorting by", "Name", core.NotifyInfo)
 			case "size":
 				ctx.Config.SortBy = config.SortBySize
+				return returnTo, core.NewNotifyCmd("Sorting by", "Size", core.NotifyInfo)
 			default:
 				return returnTo, nil
 			}
-			return returnTo, nil
 		},
 	},
 	"group": {
@@ -68,18 +73,22 @@ var commands = map[string]cmdDef{
 			switch arg {
 			case "files":
 				ctx.Config.Grouping = config.FilesFirst
+				return returnTo, core.NewNotifyCmd("Grouping", "Files first", core.NotifyInfo)
 			case "dirs":
 				ctx.Config.Grouping = config.DirsFirst
+				return returnTo, core.NewNotifyCmd("Grouping", "Dirs first", core.NotifyInfo)
 			case "filesonly":
 				ctx.Config.Grouping = config.FilesOnly
+				return returnTo, core.NewNotifyCmd("Grouping", "Files only", core.NotifyInfo)
 			case "dirsonly":
 				ctx.Config.Grouping = config.DirsOnly
+				return returnTo, core.NewNotifyCmd("Grouping", "Dirs only", core.NotifyInfo)
 			case "mixed":
 				ctx.Config.Grouping = config.Mixed
+				return returnTo, core.NewNotifyCmd("Grouping", "Mixed", core.NotifyInfo)
 			default:
 				return returnTo, nil
 			}
-			return returnTo, nil
 		},
 	},
 	"toggle": {
@@ -88,40 +97,52 @@ var commands = map[string]cmdDef{
 			switch arg {
 			case "icons":
 				ctx.Config.ShowIcons = !ctx.Config.ShowIcons
+				return returnTo, core.NewNotifyCmd("Icons", core.BoolLabel(ctx.Config.ShowIcons), core.NotifyInfo)
 			case "hidden":
 				ctx.Config.ShowHidden = !ctx.Config.ShowHidden
+				return returnTo, core.NewNotifyCmd("Hidden files", core.BoolLabel(ctx.Config.ShowHidden), core.NotifyInfo)
 			case "live":
 				ctx.Config.LiveFilter = !ctx.Config.LiveFilter
+				return returnTo, core.NewNotifyCmd("Live filter", core.BoolLabel(ctx.Config.LiveFilter), core.NotifyInfo)
 			default:
 				return returnTo, nil
 			}
-			return returnTo, nil
 		},
 	},
 	"up": {
 		run: func(ctx *core.Context, arg string, returnTo core.Mode) (core.Mode, tea.Cmd) {
-			n := 1
+			levels := 1
 			if arg != "" {
 				parsed, err := strconv.Atoi(arg)
 				if err != nil || parsed < 1 {
-					return returnTo, nil
+					return returnTo, core.NewNotifyCmd("Invalid number", "\""+arg+"\" is not a positive number", core.NotifyWarn)
 				}
-				n = parsed
+				levels = parsed
 			}
-			for range n {
+			moved := 0
+			for range levels {
 				if ctx.Current.ParentDir() == nil {
 					break
 				}
 				ctx.Current = ctx.Current.ParentDir()
+				moved++
 			}
 			core.Rebuild(ctx)
-			return returnTo, nil
+			if moved < levels {
+				return returnTo, core.NewNotifyCmd("Moved up", "Only "+strconv.Itoa(moved)+" "+core.Plural("level", moved)+", at root", core.NotifyWarn)
+			}
+			return returnTo, core.NewNotifyCmd("Moved up", strconv.Itoa(moved)+" "+core.Plural("level", moved), core.NotifyInfo)
+		},
+	},
+	"debug": {
+		run: func(ctx *core.Context, arg string, returnTo core.Mode) (core.Mode, tea.Cmd) {
+			return debug.New(returnTo), core.NewNotifyCmd("Debug mode enabled", "Press esc to return to explorer", core.NotifyWarn)
 		},
 	},
 }
 
 // commandVerbs is the canonical verb list shown when no argument has been typed yet.
-var commandVerbs = []string{"quit", "save", "sort", "sortby", "group", "toggle", "up"}
+var commandVerbs = []string{"quit", "save", "sort", "sortby", "group", "toggle", "up", "debug"}
 
 // Command is the command line mode. It owns a textinput widget with tab completion and a return
 // target that the mode transitions back to on complete or cancel.
@@ -137,9 +158,9 @@ func New(returnTo core.Mode) *Command {
 	input.Placeholder = "command"
 	input.ShowSuggestions = true
 	input.SetSuggestions(commandVerbs)
-	input.KeyMap.AcceptSuggestion = key.NewBinding(key.WithKeys("tab"))
-	input.KeyMap.NextSuggestion = key.NewBinding(key.WithKeys("down", "j"))
-	input.KeyMap.PrevSuggestion = key.NewBinding(key.WithKeys("up", "k"))
+	input.KeyMap.AcceptSuggestion = commandKeys.AcceptSuggestion
+	input.KeyMap.NextSuggestion = commandKeys.NextSuggestion
+	input.KeyMap.PrevSuggestion = commandKeys.PrevSuggestion
 
 	return &Command{input: input, returnTo: returnTo}
 }
@@ -211,9 +232,7 @@ func (cmd *Command) refreshSuggestions(value string) {
 }
 
 // Help returns the command key bindings for the help footer.
-func (cmd *Command) Help() help.KeyMap {
-	return core.FlatKeyMap{commandKeys.Confirm, commandKeys.Cancel}
-}
+func (cmd *Command) Help() help.KeyMap { return commandKeys }
 
 func runCommand(ctx *core.Context, value string, returnTo core.Mode) (core.Mode, tea.Cmd) {
 	parts := splitFields(value)
@@ -228,11 +247,13 @@ func runCommand(ctx *core.Context, value string, returnTo core.Mode) (core.Mode,
 
 	def, exists := commands[verb]
 	if !exists {
-		return returnTo, nil
+		detail := "\"" + verb + "\" is not a valid command"
+		return returnTo, core.NewNotifyCmd("Command not executed", detail, core.NotifyWarn)
 	}
 
 	if len(def.args) > 0 && arg == "" {
-		return returnTo, nil
+		detail := strings.Join(def.args, ", ")
+		return returnTo, core.NewNotifyCmd("\""+verb+"\" requires an argument", detail, core.NotifyWarn)
 	}
 
 	return def.run(ctx, arg, returnTo)

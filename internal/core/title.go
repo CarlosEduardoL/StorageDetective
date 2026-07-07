@@ -64,12 +64,15 @@ func Title(dir *vfs.Dir, width int, showIcons bool, grouping string) string {
 	return text
 }
 
-// TitleGroup returns the grouping label, with a "(h)" suffix when hidden files are not shown.
-// The result is meant to be passed to Title as the grouping argument.
+// TitleGroup returns the title grouping label.
 func TitleGroup(ctx *Context) string {
 	g := config.GroupingString(ctx.Config.Grouping)
 	if !ctx.Config.ShowHidden {
-		g += " (h)"
+		if ctx.Config.ShowIcons {
+			g += " | 👁"
+		} else {
+			g += " | h"
+		}
 	}
 	return g
 }

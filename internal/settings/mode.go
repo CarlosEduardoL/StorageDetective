@@ -20,6 +20,8 @@ const (
 	rowIcons
 	rowHidden
 	rowLiveFilter
+	rowNotifyLevel
+	rowTimeout
 	rowCount
 )
 
@@ -69,12 +71,14 @@ func (settings *Settings) Update(ctx *core.Context, msg tea.Msg) (core.Mode, tea
 		case key.Matches(msg, settingsKeys.Confirm):
 			return settings.returnTo, nil
 		case key.Matches(msg, settingsKeys.Save):
-			save(ctx.Config)
-			return settings.returnTo, nil
+			if err := save(ctx.Config); err != nil {
+				return settings.returnTo, core.NewNotifyCmd("Save failed", err.Error(), core.NotifyError)
+			}
+			return settings.returnTo, core.NewNotifyCmd("Config saved", "", core.NotifyInfo)
 		case key.Matches(msg, settingsKeys.Reset):
 			ctx.Config = config.DefaultConfig()
 			core.Rebuild(ctx)
-			return nil, nil
+			return nil, core.NewNotifyCmd("Settings reset", "Defaults applied", core.NotifyInfo)
 		case key.Matches(msg, settingsKeys.Cancel):
 			ctx.Config = settings.snapshot
 			return settings.returnTo, nil
@@ -97,13 +101,17 @@ func (settings *Settings) applyFocused(ctx *core.Context) core.Mode {
 	case rowOrder:
 		ctx.Config.SortOrder.Toggle()
 	case rowGroup:
-		return choose.NewGroupPicker(ctx.Config.Grouping, settings)
+		return choose.NewPicker("Group By", &ctx.Config.Grouping, settings, core.Rebuild)
 	case rowIcons:
 		ctx.Config.ShowIcons = !ctx.Config.ShowIcons
 	case rowHidden:
 		ctx.Config.ShowHidden = !ctx.Config.ShowHidden
 	case rowLiveFilter:
 		ctx.Config.LiveFilter = !ctx.Config.LiveFilter
+	case rowNotifyLevel:
+		return choose.NewPicker("Notify Level", &ctx.Config.NotifyLevel, settings, nil)
+	case rowTimeout:
+		return choose.NewPicker("Notify Timeout", &ctx.Config.NotifyTimeout, settings, nil)
 	}
 	return nil
 }

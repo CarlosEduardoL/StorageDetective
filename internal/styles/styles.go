@@ -12,6 +12,8 @@ import (
 const (
 	AccentColor = "11"  // yellow, used for borders, highlights, cursor, titles
 	ActiveColor = "14"  // cyan, used for live indicators and help keys
+	InfoColor   = "75"  // pale blue, used for info toast borders
+	ErrorColor  = "9"   // bright red, used for error toast borders
 	MainColor   = "7"   // white, used for primary text
 	DimColor    = "240" // gray, used for borders, separators, secondary text
 	MutedColor  = "8"   // darker gray, used for less important text
@@ -56,6 +58,15 @@ var BoldMain = lipgloss.NewStyle().Foreground(lipgloss.Color(MainColor)).Bold(tr
 
 // Muted renders text in muted (darker gray) color.
 var Muted = lipgloss.NewStyle().Foreground(lipgloss.Color(MutedColor))
+
+// NotifyInfo renders text in info (pale blue) color for info toasts.
+var NotifyInfo = lipgloss.NewStyle().Foreground(lipgloss.Color(InfoColor))
+
+// NotifyWarn renders text in accent (yellow) color for warning toasts.
+var NotifyWarn = lipgloss.NewStyle().Foreground(lipgloss.Color(AccentColor))
+
+// NotifyError renders text in error (bright red) color for error toasts.
+var NotifyError = lipgloss.NewStyle().Foreground(lipgloss.Color(ErrorColor))
 
 // HelpKey is the style for the key part of the help footer.
 var HelpKey = lipgloss.NewStyle().Foreground(lipgloss.Color(ActiveColor))

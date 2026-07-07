@@ -2,7 +2,9 @@
 // reads and mutates, the live filter regex, the sort and grouping choices, the display flags.
 package config
 
-import "regexp"
+import (
+	"regexp"
+)
 
 // SortBy identifies which field a directory listing is ordered on.
 type SortBy int
@@ -33,6 +35,16 @@ const (
 	Mixed                      // all items sorted together by the chosen field
 )
 
+// NotifyLevel controls which toast severities are shown. A higher value means more filtering.
+type NotifyLevel int
+
+const (
+	NotifyAll   NotifyLevel = iota // show all toasts
+	NotifyWarn                     // show warn and error only
+	NotifyError                    // show errors only
+	NotifyOff                      // no toasts
+)
+
 // Config is the full set of user facing settings. In code the fields are read and written
 // through methods like Toggle so every state transition goes through one place.
 type Config struct {
@@ -43,18 +55,23 @@ type Config struct {
 	ShowHidden bool           `json:"show_hidden"`
 	LiveFilter bool           `json:"live_filter"`
 	Filter     *regexp.Regexp `json:"-"`
+
+	NotifyLevel   NotifyLevel   `json:"notify_level"`
+	NotifyTimeout NotifyTimeout `json:"notify_timeout"`
 }
 
 // DefaultConfig returns the starting state for a first run, largest items first so the user
 // immediately sees what is taking the most space.
 func DefaultConfig() Config {
 	return Config{
-		SortBy:     SortBySize,
-		SortOrder:  Descending,
-		Grouping:   Mixed,
-		ShowIcons:  false,
-		ShowHidden: false,
-		LiveFilter: true,
+		SortBy:        SortBySize,
+		SortOrder:     Descending,
+		Grouping:      Mixed,
+		ShowIcons:     false,
+		ShowHidden:    false,
+		LiveFilter:    true,
+		NotifyLevel:   NotifyAll,
+		NotifyTimeout: 3,
 	}
 }
 
@@ -98,4 +115,24 @@ func (order *SortOrder) Toggle() {
 // first value after the last.
 func (group *Grouping) Toggle() {
 	*group = (*group + 1) % 5
+}
+
+// Toggle advances the receiver to the next NotifyLevel, wrapping back to All after Off.
+func (level *NotifyLevel) Toggle() {
+	*level = (*level + 1) % 4
+}
+
+// NotifyLevelString returns the human readable label for a NotifyLevel value.
+func NotifyLevelString(level NotifyLevel) string {
+	switch level {
+	case NotifyAll:
+		return "all"
+	case NotifyWarn:
+		return "warn"
+	case NotifyError:
+		return "error"
+	case NotifyOff:
+		return "off"
+	}
+	return ""
 }

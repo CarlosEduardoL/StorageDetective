@@ -72,30 +72,31 @@ func (ch *Choose) Update(ctx *core.Context, msg tea.Msg) (core.Mode, tea.Cmd) {
 }
 
 // Help returns the choose key bindings for the help footer.
-func (ch *Choose) Help() help.KeyMap {
-	return core.FlatKeyMap{chooseKeys.Up, chooseKeys.Down, chooseKeys.Confirm, chooseKeys.Cancel}
-}
+func (ch *Choose) Help() help.KeyMap { return chooseKeys }
 
-// NewGroupPicker returns a Choose dialog pre configured with the five grouping values (Mixed,
-// FilesFirst, DirsFirst, FilesOnly, DirsOnly). The cursor is pre set on current. backTo is
-// the mode to return to on cancel. On confirm the picked value is written to ctx.Config.Grouping.
-func NewGroupPicker(current config.Grouping, backTo core.Mode) *Choose {
-	values := []config.Grouping{config.Mixed, config.FilesFirst, config.DirsFirst, config.FilesOnly, config.DirsOnly}
-	options := make([]Option, len(values))
-	for i, v := range values {
-		v := v
-		options[i] = Option{
-			Label: config.GroupingString(v),
+// NewPicker returns a Choose dialog pre configured from a Pickeable value's Options. When the
+// user confirms a selection the value is written directly to ptr. after is called after the
+// write, typically used for core.Rebuild.
+func NewPicker[T config.Pickeable](title string, ptr *T, backTo core.Mode, after func(ctx *core.Context)) *Choose {
+	options := (*ptr).Options()
+	opts := make([]Option, len(options))
+	for i, opt := range options {
+		val := opt
+		opts[i] = Option{
+			Label: opt.PickLabel(),
 			Action: func(ctx *core.Context) (core.Mode, tea.Cmd) {
-				ctx.Config.Grouping = v
-				core.Rebuild(ctx)
+				*ptr = val.(T)
+				if after != nil {
+					after(ctx)
+				}
 				return backTo, nil
 			},
 		}
 	}
-	ch := New("Group By", options, backTo)
-	for i, v := range values {
-		if v == current {
+	ch := New(title, opts, backTo)
+	current := config.Pickeable(*ptr)
+	for i, opt := range options {
+		if opt == current {
 			ch.SetCursor(i)
 			break
 		}

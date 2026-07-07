@@ -10,7 +10,6 @@ import (
 
 	"github.com/SolracHQ/stex/internal/app"
 	"github.com/SolracHQ/stex/internal/config"
-	"github.com/SolracHQ/stex/internal/core"
 	"github.com/SolracHQ/stex/internal/vfs"
 
 	"charm.land/bubbles/v2/key"
@@ -47,7 +46,9 @@ func New(path string, cfg config.Config) *Loading {
 		path:  path,
 		cfg:   cfg,
 		state: state,
-		quit:  core.DefaultKeys().Quit,
+		quit: key.NewBinding(
+			key.WithKeys("ctrl+c", "ctrl+d"),
+		),
 	}
 }
 

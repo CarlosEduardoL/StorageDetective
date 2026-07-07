@@ -19,7 +19,6 @@ func newCtx() *core.Context {
 		Height: 30,
 		Config: config.DefaultConfig(),
 		Table:  tbl,
-		Keys:   core.DefaultKeys(),
 	}
 }
 
@@ -127,39 +126,17 @@ func TestCommandSortDescending(t *testing.T) {
 	}
 }
 
-func TestCommandSortAscAlias(t *testing.T) {
-	c := New(testutil.StubMode{})
-	ctx := newCtx()
-	_ = c.Init(ctx)
-	c.input.SetValue("sort asc")
-	_, _ = c.Update(ctx, specialKey(tea.KeyEnter))
-	if ctx.Config.SortOrder != config.Ascending {
-		t.Fatalf("expected Ascending with 'asc' alias, got %v", ctx.Config.SortOrder)
-	}
-}
-
 func TestCommandSaveReturnsToTarget(t *testing.T) {
 	c := New(testutil.StubMode{})
 	ctx := newCtx()
 	_ = c.Init(ctx)
 	c.input.SetValue("save")
 	next, cmd := c.Update(ctx, specialKey(tea.KeyEnter))
-	if cmd != nil {
-		t.Fatal("expected nil cmd on save")
+	if cmd == nil {
+		t.Fatal("expected a toast cmd on save")
 	}
 	if _, ok := next.(testutil.StubMode); !ok {
 		t.Fatalf("expected returnStub on save, got %T", next)
-	}
-}
-
-func TestCommandSortDescAlias(t *testing.T) {
-	c := New(testutil.StubMode{})
-	ctx := newCtx()
-	_ = c.Init(ctx)
-	c.input.SetValue("sort desc")
-	_, _ = c.Update(ctx, specialKey(tea.KeyEnter))
-	if ctx.Config.SortOrder != config.Descending {
-		t.Fatalf("expected Descending with 'desc' alias, got %v", ctx.Config.SortOrder)
 	}
 }
 
@@ -227,8 +204,8 @@ func TestCommandUnknownVerbReturnsToTarget(t *testing.T) {
 	_ = c.Init(ctx)
 	c.input.SetValue("nonexistent")
 	next, cmd := c.Update(ctx, specialKey(tea.KeyEnter))
-	if cmd != nil {
-		t.Fatal("expected nil cmd on unknown verb")
+	if cmd == nil {
+		t.Fatal("expected a toast cmd on unknown verb")
 	}
 	if _, ok := next.(testutil.StubMode); !ok {
 		t.Fatalf("expected testutil.StubMode on unknown verb, got %T", next)
@@ -241,8 +218,8 @@ func TestCommandVerbWithoutArgReturnsToTarget(t *testing.T) {
 	_ = c.Init(ctx)
 	c.input.SetValue("sort")
 	next, cmd := c.Update(ctx, specialKey(tea.KeyEnter))
-	if cmd != nil {
-		t.Fatal("expected nil cmd on verb without arg")
+	if cmd == nil {
+		t.Fatal("expected a toast cmd on verb without arg")
 	}
 	if _, ok := next.(testutil.StubMode); !ok {
 		t.Fatalf("expected testutil.StubMode on verb without arg, got %T", next)

@@ -7,9 +7,9 @@ import (
 
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
-	"github.com/SolracHQ/stex/internal/vfs"
 	"github.com/SolracHQ/stex/internal/styles"
 	"github.com/SolracHQ/stex/internal/testutil"
+	"github.com/SolracHQ/stex/internal/vfs"
 
 	"charm.land/bubbles/v2/table"
 	tea "charm.land/bubbletea/v2"
@@ -40,7 +40,6 @@ func newCtx(t *testing.T) *core.Context {
 		Current: root,
 		Config:  config.DefaultConfig(),
 		Table:   tbl,
-		Keys:    core.DefaultKeys(),
 	}
 	s := New(testutil.StubMode{})
 	_ = s.Init(ctx)

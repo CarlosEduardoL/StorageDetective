@@ -9,9 +9,8 @@ import (
 	"github.com/SolracHQ/stex/internal/styles"
 )
 
-func (s *Settings) Overlay(ctx *core.Context) string {
-	width := max(1, min(60, ctx.Width-4))
-	rows := renderRows(&ctx.Config, s.cursor)
+func (settings *Settings) Overlay(ctx *core.Context) string {
+	rows := renderRows(&ctx.Config, settings.cursor)
 
 	content := strings.Join([]string{
 		styles.BoldAccent.Render("Settings"),
@@ -19,21 +18,11 @@ func (s *Settings) Overlay(ctx *core.Context) string {
 		rows,
 	}, "\n")
 
-	return styles.DialogBorder.Width(width).Render(content)
+	return styles.DialogBorder.Render(content)
 }
 
 func renderRows(cfg *config.Config, cursor int) string {
-	rows := []struct {
-		name  string
-		value string
-	}{
-		{"sort", sortLabel(cfg.SortBy)},
-		{"order", orderLabel(cfg.SortOrder)},
-		{"group", config.GroupingString(cfg.Grouping)},
-		{"icons", boolLabel(cfg.ShowIcons, "off", "on")},
-		{"hidden", boolLabel(cfg.ShowHidden, "off", "on")},
-		{"live filter", boolLabel(cfg.LiveFilter, "off", "on")},
-	}
+	rows := rowDefs(cfg)
 	var b strings.Builder
 	for i, r := range rows {
 		marker := "  "
@@ -44,10 +33,29 @@ func renderRows(cfg *config.Config, cursor int) string {
 		}
 		name := nameStyle.Render(padRight(r.name, 12))
 		value := styles.Main.Render(r.value)
-		b.WriteString(fmt.Sprintf("%s%s  %s", marker, name, value))
+		fmt.Fprintf(&b, "%s%s  %s", marker, name, value)
 		b.WriteString("\n")
 	}
 	return strings.TrimRight(b.String(), "\n")
+}
+
+func rowDefs(cfg *config.Config) []struct {
+	name  string
+	value string
+} {
+	return []struct {
+		name  string
+		value string
+	}{
+		{"sort", sortLabel(cfg.SortBy)},
+		{"order", orderLabel(cfg.SortOrder)},
+		{"group", config.GroupingString(cfg.Grouping)},
+		{"icons", core.BoolLabel(cfg.ShowIcons)},
+		{"hidden", core.BoolLabel(cfg.ShowHidden)},
+		{"live filter", core.BoolLabel(cfg.LiveFilter)},
+		{"notify level", cfg.NotifyLevel.PickLabel()},
+		{"notify time", cfg.NotifyTimeout.PickLabel()},
+	}
 }
 
 func padRight(s string, n int) string {
@@ -69,11 +77,4 @@ func orderLabel(o config.SortOrder) string {
 		return "asc"
 	}
 	return "desc"
-}
-
-func boolLabel(b bool, off, on string) string {
-	if b {
-		return on
-	}
-	return off
 }

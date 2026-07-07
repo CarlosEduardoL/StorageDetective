@@ -30,7 +30,6 @@ type Context struct {
 	Items []vfs.FileSystemItem
 
 	Help help.Model
-	Keys Keys
 }
 
 // InfoState holds the cached right pane content. Tracking the path lets the explorer skip

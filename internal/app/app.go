@@ -16,8 +16,8 @@ import (
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
 	"github.com/SolracHQ/stex/internal/explorer"
-	"github.com/SolracHQ/stex/internal/vfs"
 	"github.com/SolracHQ/stex/internal/styles"
+	"github.com/SolracHQ/stex/internal/vfs"
 
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/table"
@@ -29,8 +29,10 @@ import (
 // App is the top level Bubble Tea model. It owns the shared Context and the active Mode, and
 // routes messages between them. Zero value is not valid, use New to construct one.
 type App struct {
-	ctx  *core.Context
-	mode core.Mode
+	ctx         *core.Context
+	mode        core.Mode
+	keys        Keys
+	notifyQueue []core.AppNotify
 }
 
 // New constructs the top level Bubble Tea model with the given path, resolved config, and
@@ -53,10 +55,10 @@ func New(path string, cfg config.Config, root *vfs.Dir) tea.Model {
 			Root:    root,
 			Current: root,
 			Help:    help,
-			Keys:    core.DefaultKeys(),
 			Table:   table,
 		},
 		mode: &explorer.Explorer{},
+		keys: DefaultKeys(),
 	}
 }
 
@@ -69,8 +71,9 @@ func (app *App) Init() tea.Cmd {
 }
 
 // Update dispatches a message to the active mode. It also intercepts window resize (to keep
-// the context in sync) and the global quit key. When a mode returns a new mode, the new
-// mode's Init is called immediately and its command is appended.
+// the context in sync), the global quit key, notify messages, and the dismiss key. When
+// a mode returns a new mode, the new mode's Init is called immediately and its command is
+// appended.
 func (app *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
@@ -78,12 +81,31 @@ func (app *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		app.ctx.Width = sizeMsg.Width
 		app.ctx.Height = sizeMsg.Height
 		app.ctx.Help.SetWidth(sizeMsg.Width - 4)
+		if app.ctx.Current != nil {
+			core.Rebuild(app.ctx)
+			core.UpdateInfo(app.ctx)
+		}
 	}
 
-	if keyMsg, ok := msg.(tea.KeyPressMsg); ok {
-		if key.Matches(keyMsg, app.ctx.Keys.Quit) {
+	switch msg := msg.(type) {
+	case tea.KeyPressMsg:
+		if key.Matches(msg, app.keys.Quit) {
 			return app, tea.Quit
 		}
+		if len(app.notifyQueue) > 0 && key.Matches(msg, app.keys.DismissNotify) {
+			return app, app.dismissNotify()
+		}
+		if key.Matches(msg, app.keys.HelpToggle) {
+			app.ctx.Help.ShowAll = !app.ctx.Help.ShowAll
+			return app, nil
+		}
+	case core.AppNotify:
+		if !app.notifyAllowed(msg.Severity) {
+			return app, nil
+		}
+		return app, app.enqueueNotify(msg)
+	case core.AppNotifyDone:
+		return app, app.dismissNotify()
 	}
 
 	next, cmd := app.mode.Update(app.ctx, msg)
@@ -102,11 +124,19 @@ func (app *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View returns the rendered frame. The base panels (title, table, info, footer) come from
-// core.RenderBase, the active mode's overlay composites on top by overlayCenter.
+// core.RenderBase, the active mode's overlay composites on top, and a notification appears at
+// the top right.
 func (app *App) View() tea.View {
-	body := core.RenderBase(app.ctx, app.mode.Help())
+	body := core.RenderBase(app.ctx, KeyMap{
+		mode:    app.mode.Help(),
+		globals: []key.Binding{app.keys.Quit, app.keys.HelpToggle},
+	})
 	if overlay := app.mode.Overlay(app.ctx); overlay != "" {
 		body = overlayCenter(body, overlay)
+	}
+	if len(app.notifyQueue) > 0 {
+		toast := RenderNotify(app.notifyQueue[0].Text, app.notifyQueue[0].Detail, app.notifyQueue[0].Severity)
+		body = OverlayNotify(body, toast)
 	}
 	return core.WrapView(body)
 }

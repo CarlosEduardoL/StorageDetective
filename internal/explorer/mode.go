@@ -31,6 +31,7 @@ type Explorer struct{}
 // rebuilds the table rows.
 func (Explorer) Init(ctx *core.Context) tea.Cmd {
 	core.Rebuild(ctx)
+	core.UpdateInfo(ctx)
 	return nil
 }
 
@@ -44,9 +45,6 @@ func (Explorer) Update(ctx *core.Context, msg tea.Msg) (core.Mode, tea.Cmd) {
 
 	case tea.KeyPressMsg:
 		switch {
-		case key.Matches(msg, ctx.Keys.Help):
-			ctx.Help.ShowAll = !ctx.Help.ShowAll
-
 		case key.Matches(msg, explorerKeys.Up):
 			ctx.Table.MoveUp(1)
 			core.UpdateInfo(ctx)

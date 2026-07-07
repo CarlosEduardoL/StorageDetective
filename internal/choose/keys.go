@@ -9,6 +9,14 @@ type keys struct {
 	Cancel  key.Binding
 }
 
+func (k keys) ShortHelp() []key.Binding {
+	return []key.Binding{k.Up, k.Down, k.Confirm, k.Cancel}
+}
+
+func (k keys) FullHelp() [][]key.Binding {
+	return [][]key.Binding{{k.Up, k.Down, k.Confirm, k.Cancel}}
+}
+
 var chooseKeys = keys{
 	Up: key.NewBinding(
 		key.WithKeys("up", "k", "w"),

@@ -7,12 +7,12 @@ import (
 	"github.com/SolracHQ/stex/internal/styles"
 )
 
-func (c *Choose) Overlay(ctx *core.Context) string {
+func (ch *Choose) Overlay(ctx *core.Context) string {
 	width := max(1, min(60, ctx.Width-4))
 
 	var rows []string
-	for i, opt := range c.options {
-		if i == c.cursor {
+	for i, opt := range ch.options {
+		if i == ch.cursor {
 			rows = append(rows, styles.BoldAccent.Render("▶ "+opt.Label))
 		} else {
 			rows = append(rows, styles.Main.Render("  "+opt.Label))
@@ -20,7 +20,7 @@ func (c *Choose) Overlay(ctx *core.Context) string {
 	}
 
 	content := strings.Join([]string{
-		styles.BoldAccent.Render(c.title),
+		styles.BoldAccent.Render(ch.title),
 		"",
 		strings.Join(rows, "\n"),
 	}, "\n")

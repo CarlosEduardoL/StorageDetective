@@ -7,8 +7,8 @@ import (
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
 	"github.com/SolracHQ/stex/internal/explorer"
-	"github.com/SolracHQ/stex/internal/vfs"
 	"github.com/SolracHQ/stex/internal/testutil"
+	"github.com/SolracHQ/stex/internal/vfs"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -54,7 +54,7 @@ func TestAppTableFocusedAtStart(t *testing.T) {
 
 func TestAppHandlesResizeBeforeInit(t *testing.T) {
 	a := &App{
-		ctx:  &core.Context{Width: 80, Height: 24, Keys: core.DefaultKeys()},
+		ctx:  &core.Context{Width: 80, Height: 24},
 		mode: testutil.StubMode{},
 	}
 	_, _ = a.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
@@ -81,7 +81,7 @@ func (f *fakeMode) Help() help.KeyMap { return nil }
 
 func TestAppSwapsModeWhenReturned(t *testing.T) {
 	a := &App{
-		ctx:  &core.Context{Width: 80, Height: 24, Keys: core.DefaultKeys()},
+		ctx:  &core.Context{Width: 80, Height: 24},
 		mode: &fakeMode{next: testutil.StubMode{}},
 	}
 	_, _ = a.Update(nil)

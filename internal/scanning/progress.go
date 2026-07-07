@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/SolracHQ/stex/internal/vfs"
+	"github.com/SolracHQ/stex/internal/core"
 	"github.com/SolracHQ/stex/internal/styles"
+	"github.com/SolracHQ/stex/internal/vfs"
 )
 
 // Layout constants for the progress dialog. progressOverhead is the number of lines the
@@ -64,7 +65,7 @@ func progressBody(state *vfs.ScanState, width, height int) string {
 	if totalWarnings > 0 {
 		body.WriteString("\n")
 		avail := max(height-progressOverhead, 1)
-		fmt.Fprintf(&body, " %s", styles.BoldAccent.Render(fmt.Sprintf("WARNING: %d %s - sizes may be inaccurate", totalWarnings, plural("error", totalWarnings))))
+		fmt.Fprintf(&body, " %s", styles.BoldAccent.Render(fmt.Sprintf("WARNING: %d %s - sizes may be inaccurate", totalWarnings, core.Plural("error", totalWarnings))))
 		body.WriteString("\n")
 
 		start := 0
@@ -96,15 +97,6 @@ func progressBody(state *vfs.ScanState, width, height int) string {
 		}
 	}
 	return strings.Join(lines, "\n")
-}
-
-// plural returns word when count is exactly 1, otherwise word with an "s" appended. Used for
-// "1 error" vs "2 errors".
-func plural(word string, count int) string {
-	if count == 1 {
-		return word
-	}
-	return word + "s"
 }
 
 // commaFormat formats an int64 with comma thousands separators. "12345" becomes "12,345".

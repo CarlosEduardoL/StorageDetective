@@ -71,7 +71,7 @@ func (flt *Filter) Update(ctx *core.Context, msg tea.Msg) (core.Mode, tea.Cmd) {
 
 // Help returns the filter key bindings for the help footer.
 func (flt *Filter) Help() help.KeyMap {
-	return core.FlatKeyMap{filterKeys.Confirm, filterKeys.Cancel, filterKeys.ToggleLive}
+	return filterKeys
 }
 
 // commit compiles pattern and stores it on ctx.Config.Filter. An empty pattern clears the

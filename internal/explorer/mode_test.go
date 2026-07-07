@@ -9,8 +9,8 @@ import (
 
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
-	"github.com/SolracHQ/stex/internal/vfs"
 	"github.com/SolracHQ/stex/internal/styles"
+	"github.com/SolracHQ/stex/internal/vfs"
 
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/table"
@@ -55,7 +55,6 @@ func newCtx(t *testing.T) *core.Context {
 		Current: root,
 		Config:  config.DefaultConfig(),
 		Table:   tbl,
-		Keys:    core.DefaultKeys(),
 	}
 	core.Rebuild(ctx)
 	return ctx
@@ -85,16 +84,6 @@ func TestExplorerStaysOnUnmatchedKey(t *testing.T) {
 	next, _ := e.Update(ctx, runeKey('z'))
 	if next != nil {
 		t.Fatalf("expected nil next (stay), got %T", next)
-	}
-}
-
-func TestExplorerHelpToggleChangesShowAll(t *testing.T) {
-	ctx := newCtx(t)
-	e := Explorer{}
-	prev := ctx.Help.ShowAll
-	_, _ = e.Update(ctx, runeKey('?'))
-	if ctx.Help.ShowAll == prev {
-		t.Fatal("expected help toggle to flip ShowAll")
 	}
 }
 
@@ -165,9 +154,9 @@ func TestExplorerGoToParent(t *testing.T) {
 	if ctx.Current == ctx.Root {
 		t.Fatal("expected to enter subdir first")
 	}
-	_, _ = e.Update(ctx, specialKey(tea.KeyEscape))
+	_, _ = e.Update(ctx, specialKey(tea.KeyLeft))
 	if ctx.Current != ctx.Root {
-		t.Fatal("expected to return to root on esc")
+		t.Fatal("expected to return to root on left")
 	}
 }
 
@@ -217,9 +206,8 @@ func TestExplorerFullHelpCoversAllModes(t *testing.T) {
 	bindings := e.Help()
 
 	wantKeys := []string{
-		"c",      // clear filter
-		"/",      // filter
-		"ctrl+c", // quit
+		"c", // clear filter
+		"/", // filter
 	}
 
 	collected := collectKeyStrings(bindings.FullHelp())
