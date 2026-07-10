@@ -14,10 +14,10 @@ Persist the current configuration to `$XDG_CONFIG/stex/config.json`.
 
 Set the sort order. Requires one argument.
 
-| Argument | Aliases | Effect |
-| --- | --- | --- |
-| `ascending` | `asc` | smallest first |
-| `descending` | `desc` | largest first |
+| Argument | Effect |
+| --- | --- |
+| `ascending` | smallest first |
+| `descending` | largest first |
 
 ### sortby
 
@@ -47,10 +47,17 @@ Toggle a boolean setting. Requires one argument.
 | Argument | Effect |
 | --- | --- |
 | `icons` | show or hide emoji icons |
+| `power` | show or hide powerline glyphs |
 | `hidden` | show or hide hidden files |
 | `live` | enable or disable live filter |
 
 ### up
 
 Navigate up one or more directories. With no arguments goes to the parent.
-With a number N goes up N levels, stopping at the root.
+With a number N goes up N levels, stopping at the root. Shows a notification
+with how many levels were moved and warns if the root was reached before N.
+
+### debug
+
+Open the debug menu for development and diagnostic actions. See the notify
+form inside it to fire custom notifications for testing.

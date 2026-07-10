@@ -16,9 +16,11 @@ import (
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
 	"github.com/SolracHQ/stex/internal/explorer"
+	"github.com/SolracHQ/stex/internal/layout"
 	"github.com/SolracHQ/stex/internal/styles"
 	"github.com/SolracHQ/stex/internal/vfs"
 
+	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/table"
 	tea "charm.land/bubbletea/v2"
@@ -26,12 +28,15 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
-// App is the top level Bubble Tea model. It owns the shared Context and the active Mode, and
-// routes messages between them. Zero value is not valid, use New to construct one.
+// App is the top level Bubble Tea model. Routes messages between modes. Zero value is not
+// valid, use New.
 type App struct {
-	ctx         *core.Context
-	mode        core.Mode
-	keys        Keys
+	ctx    *core.Context
+	mode   core.Mode
+	help   help.Model // help widget, rendered by View at the top
+	screen layout.Rect  // full terminal rect, set on resize
+	keys   Keys
+
 	notifyQueue []core.AppNotify
 }
 
@@ -39,26 +44,27 @@ type App struct {
 // scanned root directory. It starts in the explorer mode and dispatches to whatever mode the
 // user activates.
 func New(path string, cfg config.Config, root *vfs.Dir) tea.Model {
-	help := styles.HelpDefaults()
+	screen := layout.New(0, 0, 80, 24)
 
-	table := table.New(
+	tbl := table.New(
 		table.WithFocused(true),
 		table.WithStyles(styles.TableDefault()),
 	)
 
+	ctx := &core.Context{
+		Path:    path,
+		Config:  cfg,
+		Root:    root,
+		Current: root,
+		Table:   tbl,
+	}
+	ctx.SetScreen(screen.Shrink(1))
 	return &App{
-		ctx: &core.Context{
-			Path:    path,
-			Config:  cfg,
-			Width:   80,
-			Height:  24,
-			Root:    root,
-			Current: root,
-			Help:    help,
-			Table:   table,
-		},
-		mode: &explorer.Explorer{},
-		keys: DefaultKeys(),
+		ctx:    ctx,
+		mode:   &explorer.Explorer{},
+		help:   styles.HelpDefaults(),
+		screen: screen,
+		keys:   DefaultKeys(),
 	}
 }
 
@@ -78,9 +84,9 @@ func (app *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	if sizeMsg, ok := msg.(tea.WindowSizeMsg); ok {
-		app.ctx.Width = sizeMsg.Width
-		app.ctx.Height = sizeMsg.Height
-		app.ctx.Help.SetWidth(sizeMsg.Width - 4)
+		app.screen = layout.New(0, 0, sizeMsg.Width, sizeMsg.Height)
+		app.help.SetWidth(sizeMsg.Width - 4)
+		app.computeScreen()
 		if app.ctx.Current != nil {
 			core.Rebuild(app.ctx)
 			core.UpdateInfo(app.ctx)
@@ -96,7 +102,8 @@ func (app *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return app, app.dismissNotify()
 		}
 		if key.Matches(msg, app.keys.HelpToggle) {
-			app.ctx.Help.ShowAll = !app.ctx.Help.ShowAll
+			app.help.ShowAll = !app.help.ShowAll
+			app.computeScreen()
 			return app, nil
 		}
 	case core.AppNotify:
@@ -115,6 +122,7 @@ func (app *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if next != nil {
 		app.mode = next
+		app.computeScreen()
 		if initCmd := next.Init(app.ctx); initCmd != nil {
 			cmds = append(cmds, initCmd)
 		}
@@ -123,28 +131,68 @@ func (app *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return app, tea.Batch(cmds...)
 }
 
-// View returns the rendered frame. The base panels (title, table, info, footer) come from
-// core.RenderBase, the active mode's overlay composites on top, and a notification appears at
-// the top right.
-func (app *App) View() tea.View {
-	body := core.RenderBase(app.ctx, KeyMap{
+func (app *App) km() KeyMap {
+	return KeyMap{
 		mode:    app.mode.Help(),
 		globals: []key.Binding{app.keys.Quit, app.keys.HelpToggle},
-	})
-	if overlay := app.mode.Overlay(app.ctx); overlay != "" {
-		body = overlayCenter(body, overlay)
 	}
-	if len(app.notifyQueue) > 0 {
-		toast := RenderNotify(app.notifyQueue[0].Text, app.notifyQueue[0].Detail, app.notifyQueue[0].Severity)
-		body = OverlayNotify(body, toast)
-	}
-	return core.WrapView(body)
 }
 
-// overlayCenter places foreground over background, centred inside the larger of the two. When
-// foreground is empty the background is returned as is, when foreground fully covers background
-// foreground is returned as is. ANSI escape sequences in the background are preserved by
-// slicing with the ansi package instead of plain string ops.
+// computeScreen updates ctx.Screen based on the current help size.
+func (app *App) computeScreen() {
+	inner := app.screen.Shrink(1)
+
+	renderedHelp := app.help.View(app.km())
+	helpHeight := 0
+	if renderedHelp != "" {
+		centered := styles.CenterText(renderedHelp, inner.Width)
+		helpHeight = strings.Count(centered, "\n") + 1
+	}
+
+	_, rest := inner.Top(helpHeight)
+	content, _ := rest.Bottom(1)
+	app.ctx.SetScreen(content)
+}
+
+// View renders the application layout.
+func (app *App) View() tea.View {
+	inner := app.screen.Shrink(1)
+
+	renderedHelp := app.help.View(app.km())
+	var centeredHelp string
+	helpHeight := 0
+	if renderedHelp != "" {
+		centeredHelp = styles.CenterText(renderedHelp, inner.Width)
+		helpHeight = strings.Count(centeredHelp, "\n") + 1
+	}
+
+	app.ctx.Table.SetHeight(app.ctx.Screen().Height)
+	body := core.RenderBase(app.ctx)
+	bordered := styles.BorderNorm.Render(body)
+
+	powerbar := app.powerbar()
+
+	var frame string
+	if helpHeight > 0 {
+		frame = centeredHelp + "\n"
+	}
+	frame += bordered + "\n" + powerbar
+
+	if overlay := app.mode.Overlay(app.ctx); overlay != "" {
+		frame = overlayCenter(frame, overlay)
+	}
+	if len(app.notifyQueue) > 0 {
+		toast := renderNotify(app.notifyQueue[0].Text, app.notifyQueue[0].Detail, app.notifyQueue[0].Severity)
+		frame = overlayNotify(frame, toast)
+	}
+
+	view := tea.NewView(frame)
+	view.AltScreen = true
+	view.MouseMode = tea.MouseModeCellMotion
+	return view
+}
+
+// overlayCenter composites foreground over background, centred.
 func overlayCenter(background, foreground string) string {
 	if foreground == "" || background == "" {
 		return background

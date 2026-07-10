@@ -9,6 +9,7 @@ import (
 
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
+	"github.com/SolracHQ/stex/internal/layout"
 	"github.com/SolracHQ/stex/internal/styles"
 	"github.com/SolracHQ/stex/internal/vfs"
 
@@ -49,13 +50,12 @@ func newCtx(t *testing.T) *core.Context {
 	root := buildTestTree(t)
 	tbl := table.New(table.WithFocused(true), table.WithStyles(styles.TableDefault()))
 	ctx := &core.Context{
-		Width:   120,
-		Height:  30,
 		Root:    root,
 		Current: root,
 		Config:  config.DefaultConfig(),
 		Table:   tbl,
 	}
+	ctx.SetScreen(layout.New(0, 0, 120, 30))
 	core.Rebuild(ctx)
 	return ctx
 }
@@ -172,10 +172,10 @@ func TestExplorerUpdateInfoPopulatesOnFirstCall(t *testing.T) {
 func TestExplorerUpdateInfoSkipsWhenPathUnchanged(t *testing.T) {
 	ctx := newCtx(t)
 	core.UpdateInfo(ctx)
-	first := ctx.Info.Content
+	path := ctx.Info.Path
 	core.UpdateInfo(ctx)
-	if ctx.Info.Content != first {
-		t.Fatal("expected Info.Content to be cached when cursor hasn't moved")
+	if ctx.Info.Path != path {
+		t.Fatal("expected Info.Path unchanged when cursor hasn't moved")
 	}
 }
 
@@ -232,10 +232,9 @@ func TestExplorerResizeTriggersRebuild(t *testing.T) {
 	ctx := newCtx(t)
 	e := Explorer{}
 	prevTableWidth := ctx.Table.Width()
-	// The app updates ctx.Width/Height before dispatching the
+	// The app updates ctx.Screen before dispatching the
 	// WindowSizeMsg to the mode. Simulate that here.
-	ctx.Width = 200
-	ctx.Height = 50
+	ctx.SetScreen(layout.New(0, 0, 200, 50))
 	_, _ = e.Update(ctx, tea.WindowSizeMsg{Width: 200, Height: 50})
 	if ctx.Table.Width() == prevTableWidth {
 		t.Fatal("expected table width to change on resize")

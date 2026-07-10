@@ -74,6 +74,8 @@ func (flt *Filter) Help() help.KeyMap {
 	return filterKeys
 }
 
+func (flt *Filter) Name() string { return "filter" }
+
 // commit compiles pattern and stores it on ctx.Config.Filter. An empty pattern clears the
 // filter. A pattern that fails to compile is silently dropped, the previous filter is kept.
 func commit(ctx *core.Context, pattern string) {

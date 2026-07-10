@@ -15,14 +15,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 )
 
-// Mouse click geometry. The border is one cell wide, the header is the second visible line,
-// and content starts at the third.
-const (
-	mouseClickBorderOffset = 1
-	mouseClickHeaderRow    = 2
-	mouseClickContentStart = 3
-	scrollLines            = 3
-)
+const scrollLines = 3
 
 // Explorer is the main mode. Zero value is valid, all state lives in the shared Context.
 type Explorer struct{}
@@ -100,31 +93,35 @@ func (Explorer) Help() help.KeyMap {
 	return explorerKeys
 }
 
-// handleMouseClick translates a mouse click into a table action. Clicks on the header row sort
-// the table by the clicked column. Clicks on the content rows select the row and navigate
-// into directories. Clicks in the right pane of a wide terminal are ignored so the user can
-// use the terminal scrollback.
+func (Explorer) Name() string { return "explorer" }
+
+// handleMouseClick translates a mouse click into a table action.
 func handleMouseClick(ctx *core.Context, msg tea.MouseClickMsg) {
 	if ctx.Current == nil {
 		return
 	}
 	mouse := msg.Mouse()
-	clickY := mouse.Y - mouseClickBorderOffset
-	clickX := mouse.X - mouseClickBorderOffset
 
-	if ctx.Width-2 >= core.SplitViewThreshold {
-		leftWidth := (ctx.Width - 2) / 2
-		if clickX >= leftWidth {
+	if !ctx.Screen().Contains(mouse.X, mouse.Y) {
+		return
+	}
+
+	clickX := mouse.X - ctx.Screen().X
+	clickY := mouse.Y - ctx.Screen().Y
+
+	if ctx.Screen().Width >= core.SplitViewThreshold {
+		left, _ := ctx.Screen().SplitV(50)
+		if clickX >= left.Width {
 			return
 		}
 	}
 
-	if clickY == mouseClickHeaderRow {
+	if clickY == 0 {
 		handleHeaderClick(ctx, clickX)
 		return
 	}
 
-	rowIndex := clickY - mouseClickContentStart
+	rowIndex := clickY - 1
 	if rowIndex < 0 || rowIndex >= len(ctx.Items) {
 		return
 	}

@@ -15,11 +15,13 @@ import (
 
 func main() {
 	icons := flag.BoolP("icons", "i", false, "start with emoji icons enabled")
+	powerGlyphs := flag.BoolP("power-glyphs", "g", false, "start with powerline glyphs in the power bar")
 	showAll := flag.BoolP("show-all", "a", false, "start with hidden files shown")
 	noLive := flag.BoolP("no-live-filter", "L", false, "disable live filter (compile on enter)")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: stex [flags] [path]\n\nFlags:\n")
 		fmt.Fprintf(os.Stderr, "  -i, --icons          start with emoji icons enabled\n")
+		fmt.Fprintf(os.Stderr, "  -g, --power-glyphs   start with powerline glyphs in the power bar\n")
 		fmt.Fprintf(os.Stderr, "  -a, --show-all       start with hidden files shown\n")
 		fmt.Fprintf(os.Stderr, "  -L, --no-live-filter disable live filter (compile on enter)\n")
 		fmt.Fprintf(os.Stderr, "  -h, --help           show this help\n")
@@ -53,6 +55,9 @@ func main() {
 	}
 	if *icons {
 		cfg.ShowIcons = true
+	}
+	if *powerGlyphs {
+		cfg.ShowPowerGlyphs = true
 	}
 	if *showAll {
 		cfg.ShowHidden = true

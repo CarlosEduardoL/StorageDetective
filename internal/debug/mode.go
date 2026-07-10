@@ -49,3 +49,4 @@ func (m *Mode) Update(ctx *core.Context, msg tea.Msg) (core.Mode, tea.Cmd) {
 }
 
 func (m *Mode) Help() help.KeyMap { return keys }
+func (m *Mode) Name() string      { return "debug" }

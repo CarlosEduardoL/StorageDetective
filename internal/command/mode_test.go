@@ -5,6 +5,7 @@ import (
 
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
+	"github.com/SolracHQ/stex/internal/layout"
 	"github.com/SolracHQ/stex/internal/styles"
 	"github.com/SolracHQ/stex/internal/testutil"
 
@@ -14,12 +15,12 @@ import (
 
 func newCtx() *core.Context {
 	tbl := table.New(table.WithFocused(true), table.WithStyles(styles.TableDefault()))
-	return &core.Context{
-		Width:  120,
-		Height: 30,
+	ctx := &core.Context{
 		Config: config.DefaultConfig(),
 		Table:  tbl,
 	}
+	ctx.SetScreen(layout.New(0, 0, 120, 30))
+	return ctx
 }
 
 func specialKey(code rune) tea.KeyPressMsg {

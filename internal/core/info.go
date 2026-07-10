@@ -8,7 +8,11 @@ import (
 	"strings"
 
 	"github.com/SolracHQ/stex/internal/config"
+	"github.com/SolracHQ/stex/internal/layout"
+	"github.com/SolracHQ/stex/internal/styles"
 	"github.com/SolracHQ/stex/internal/vfs"
+
+	"charm.land/lipgloss/v2"
 )
 
 // FileInfo holds the metadata that the right pane shows for a single file. The fields mirror
@@ -70,127 +74,78 @@ func detectMIME(path string) string {
 	return http.DetectContentType(buf[:n])
 }
 
-// ChildrenInfo holds the largest direct children of a directory for the "Largest Children"
-// segment of the right pane.
-type ChildrenInfo struct {
-	Items     []vfs.FileSystemItem
-	TotalSize vfs.Size
-}
-
-// RenderFileInfo renders the right pane for a file. width and height are the cell budget for
-// the pane, the result is padded out to fit. Returns a centred "No info available" when info
-// is nil.
-func RenderFileInfo(info *FileInfo, width, height int) string {
+// RenderFileInfo renders the right pane for a file.
+func RenderFileInfo(info *FileInfo, bounds layout.Rect) string {
 	if info == nil {
-		return centered("No info available", width, height)
+		return styles.CenterBox("No info available", bounds.Width, bounds.Height)
 	}
 
 	var lines []string
-	lines = append(lines, bold(" File Info "))
+	lines = append(lines, styles.Bold(" File Info "))
 	lines = append(lines, "")
 
-	lines = append(lines, fmt.Sprintf(" %-14s%s", "Name:", info.Name))
+	lines = append(lines, fieldLabel("Name:")+info.Name)
 	if info.Extension != "" {
-		lines = append(lines, fmt.Sprintf(" %-14s%s", "Extension:", info.Extension))
+		lines = append(lines, fieldLabel("Extension:")+info.Extension)
 	}
 	if info.MimeType != "" {
-		lines = append(lines, fmt.Sprintf(" %-14s%s", "Type:", info.MimeType))
+		lines = append(lines, fieldLabel("Type:")+info.MimeType)
 	}
-	lines = append(lines, fmt.Sprintf(" %-14s%s", "Size:", info.Size))
-	lines = append(lines, fmt.Sprintf(" %-14s%s", "Modified:", info.ModTime))
-	lines = append(lines, fmt.Sprintf(" %-14s%s", "Permissions:", info.Permissions))
+	lines = append(lines, fieldLabel("Size:")+info.Size.String())
+	lines = append(lines, fieldLabel("Modified:")+info.ModTime)
+	lines = append(lines, fieldLabel("Permissions:")+info.Permissions)
 	if info.IsSymlink {
-		lines = append(lines, fmt.Sprintf(" %-14s%s", "Symlink:", info.SymlinkTarget))
+		lines = append(lines, fieldLabel("Symlink:")+info.SymlinkTarget)
 	}
 
-	return padLines(lines, width, height)
+	content := strings.Join(lines, "\n")
+	return lipgloss.NewStyle().Width(bounds.Width).Height(bounds.Height).Render(content)
 }
 
-// RenderDirInfo renders the right pane for a directory. The total size is taken from dirSize,
-// which the caller passes in separately so the size of the directory can come from the model
-// (which has it cached) instead of being re stat'd. The children segment shows the top n items
-// from children, sorted by size.
-func RenderDirInfo(info *FileInfo, dirSize vfs.Size, children *ChildrenInfo, width, height int) string {
+// RenderDirInfo renders the right pane for a directory.
+func RenderDirInfo(dir *vfs.Dir, info *FileInfo, bounds layout.Rect) string {
 	if info == nil {
-		return centered("No info available", width, height)
+		return styles.CenterBox("No info available", bounds.Width, bounds.Height)
 	}
 
+	dirSize := dir.Size()
+	count := dir.Count()
+	children := TopChildren(dir, MaxTopChildren)
+
 	var lines []string
-	lines = append(lines, bold(" Directory Info "))
+	lines = append(lines, styles.Bold(" Directory Info "))
 	lines = append(lines, "")
 
-	lines = append(lines, fmt.Sprintf(" %-14s%s", "Name:", info.Name))
-	lines = append(lines, fmt.Sprintf(" %-14s%s", "Size:", dirSize))
-	lines = append(lines, fmt.Sprintf(" %-14s%s", "Modified:", info.ModTime))
-	lines = append(lines, fmt.Sprintf(" %-14s%s", "Permissions:", info.Permissions))
+	lines = append(lines, fieldLabel("Name:")+info.Name)
+	lines = append(lines, fieldLabel("Size:")+dirSize.String())
+	lines = append(lines, fieldLabel("Files:")+fmt.Sprintf("%d", count.Files))
+	lines = append(lines, fieldLabel("Dirs:")+fmt.Sprintf("%d", count.Dirs))
+	lines = append(lines, fieldLabel("Modified:")+info.ModTime)
+	lines = append(lines, fieldLabel("Permissions:")+info.Permissions)
 
-	if children != nil && len(children.Items) > 0 {
+	if len(children) > 0 {
 		lines = append(lines, "")
-		lines = append(lines, bold(" Largest Children "))
+		lines = append(lines, styles.Bold(" Largest Children "))
 		lines = append(lines, "")
-		for _, item := range children.Items {
-			pct := item.Size().PercentOf(children.TotalSize)
+		for _, item := range children {
+			pct := item.Size().PercentOf(dirSize)
 			lines = append(lines, fmt.Sprintf(" %5.2f%% %10s  %s", pct, item.Size().String(), item.Name()))
 		}
 	}
 
-	return padLines(lines, width, height)
+	content := strings.Join(lines, "\n")
+	return lipgloss.NewStyle().Width(bounds.Width).Height(bounds.Height).Render(content)
 }
 
-// centered writes text centred inside a width by height box. Lines are split on "\n" and each
-// line is padded with spaces to the centre. Extra vertical space is added above the text.
-func centered(text string, width, height int) string {
-	lines := strings.Split(text, "\n")
-	contentHeight := len(lines)
-	topPad := max((height-contentHeight)/2, 0)
-	var buf strings.Builder
-	for range topPad {
-		buf.WriteString("\n")
-	}
-	for _, line := range lines {
-		padding := max((width-len(line))/2, 0)
-		buf.WriteString(strings.Repeat(" ", padding))
-		buf.WriteString(line)
-		buf.WriteString("\n")
-	}
-	return strings.TrimRight(buf.String(), "\n")
+// fieldLabel renders a right-pane field label in a fixed 14-cell column.
+func fieldLabel(label string) string {
+	return " " + lipgloss.NewStyle().Width(14).Align(lipgloss.Left).Render(label)
 }
 
-// padLines joins the given lines with newlines, truncating any line that exceeds width, then
-// appends empty lines until the result has exactly height lines.
-func padLines(lines []string, width, height int) string {
-	var buf strings.Builder
-	for index, line := range lines {
-		if index > 0 {
-			buf.WriteString("\n")
-		}
-		if len(line) > width {
-			line = line[:width]
-		}
-		buf.WriteString(line)
-	}
-	used := len(lines)
-	for i := used; i < height; i++ {
-		buf.WriteString("\n")
-	}
-	return buf.String()
-}
+// MaxTopChildren is the number of children shown in the Largest Children section.
+const MaxTopChildren = 10
 
-// bold returns text wrapped in the ANSI escape for bold on and off. Used for the section
-// headers in the info pane.
-func bold(text string) string {
-	return "\033[1m" + text + "\033[22m"
-}
-
-// Info pane layout constants.
-const (
-	InfoPanelWidth  = 80
-	InfoPanelHeight = 10
-	MaxTopChildren  = 10
-)
-
-// UpdateInfo refreshes the cached right pane content for the current cursor position. Returns
-// immediately when the selection has not changed, so wheel scrolling stays cheap.
+// UpdateInfo caches the file stat for the current cursor position.
 func UpdateInfo(ctx *Context) {
 	if ctx.Current == nil {
 		return
@@ -201,29 +156,40 @@ func UpdateInfo(ctx *Context) {
 	}
 	item := ctx.Items[idx]
 	path := item.FullPath()
-	if path == ctx.Info.Path {
-		return
-	}
-	ctx.Info.Path = path
 
 	if _, ok := item.(*vfs.UpLink); ok {
-		ctx.Info.Content = ""
+		ctx.Info.file = nil
 		return
 	}
 
-	info := NewFileInfo(path)
-	if dir, ok := item.(*vfs.Dir); ok {
-		children := TopChildren(dir, MaxTopChildren)
-		ctx.Info.Content = RenderDirInfo(info, dir.Size(), children, InfoPanelWidth, InfoPanelHeight)
-	} else {
-		ctx.Info.Content = RenderFileInfo(info, InfoPanelWidth, InfoPanelHeight)
+	if path != ctx.Info.Path {
+		ctx.Info.Path = path
+		ctx.Info.file = NewFileInfo(path)
 	}
 }
 
-// TopChildren returns the n largest direct children of dir, sorted by size descending, with
-// the sum of their sizes. Used to populate the "Largest Children" segment of the directory
-// info pane.
-func TopChildren(dir *vfs.Dir, n int) *ChildrenInfo {
+// InfoContent renders the info panel for the current cursor position. Returns empty when
+// there is nothing to show (UpLink, nil file, or bounds are zero).
+func InfoContent(ctx *Context) string {
+	if ctx.Info.file == nil || ctx.Info.Bounds.Width == 0 || ctx.Info.Bounds.Height == 0 {
+		return ""
+	}
+	idx := ctx.Table.Cursor()
+	if idx < 0 || idx >= len(ctx.Items) {
+		return ""
+	}
+	item := ctx.Items[idx]
+	if _, ok := item.(*vfs.UpLink); ok {
+		return ""
+	}
+	if dir, ok := item.(*vfs.Dir); ok {
+		return RenderDirInfo(dir, ctx.Info.file, ctx.Info.Bounds)
+	}
+	return RenderFileInfo(ctx.Info.file, ctx.Info.Bounds)
+}
+
+// TopChildren returns the n largest direct children of dir, sorted by size descending.
+func TopChildren(dir *vfs.Dir, n int) []vfs.FileSystemItem {
 	if dir == nil || n <= 0 {
 		return nil
 	}
@@ -233,18 +199,8 @@ func TopChildren(dir *vfs.Dir, n int) *ChildrenInfo {
 		Grouping:  config.Mixed,
 	}
 	items := dir.ComputeItems(cfg)
-	filtered := make([]vfs.FileSystemItem, 0, len(items))
-	for _, item := range items {
-		if _, ok := item.(*vfs.UpLink); !ok {
-			filtered = append(filtered, item)
-		}
+	if len(items) > n {
+		items = items[:n]
 	}
-	if len(filtered) > n {
-		filtered = filtered[:n]
-	}
-	var total vfs.Size
-	for _, item := range filtered {
-		total += item.Size()
-	}
-	return &ChildrenInfo{Items: filtered, TotalSize: total}
+	return items
 }

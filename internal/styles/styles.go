@@ -8,18 +8,6 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// Color palette.
-const (
-	AccentColor = "11"  // yellow, used for borders, highlights, cursor, titles
-	ActiveColor = "14"  // cyan, used for live indicators and help keys
-	InfoColor   = "75"  // pale blue, used for info toast borders
-	ErrorColor  = "9"   // bright red, used for error toast borders
-	MainColor   = "7"   // white, used for primary text
-	DimColor    = "240" // gray, used for borders, separators, secondary text
-	MutedColor  = "8"   // darker gray, used for less important text
-	SelectBg    = "239" // dark gray background for selected table rows
-)
-
 // DialogBorder is a double border style with the accent color and inner horizontal padding.
 // The caller should set Width before rendering.
 var DialogBorder = lipgloss.NewStyle().
@@ -67,6 +55,99 @@ var NotifyWarn = lipgloss.NewStyle().Foreground(lipgloss.Color(AccentColor))
 
 // NotifyError renders text in error (bright red) color for error toasts.
 var NotifyError = lipgloss.NewStyle().Foreground(lipgloss.Color(ErrorColor))
+
+// PowerbarMode is the style for the mode name segment in the power bar. Yellow background,
+// black text for contrast.
+var PowerbarMode = lipgloss.NewStyle().
+	Background(lipgloss.Color(AccentColor)).
+	Foreground(lipgloss.Color("0"))
+
+// PowerbarSegment is the style for neutral segments in the power bar (grouping, size, counts).
+// Dim background, main text.
+var PowerbarSegment = lipgloss.NewStyle().
+	Background(lipgloss.Color(DimColor)).
+	Foreground(lipgloss.Color(MainColor))
+
+// PowerbarSegmentAlt is the alternating style for odd neutral segments (hidden, counts).
+// Slightly darker background than PowerbarSegment for a subtle zebra stripe effect.
+var PowerbarSegmentAlt = lipgloss.NewStyle().
+	Background(lipgloss.Color(DimAltColor)).
+	Foreground(lipgloss.Color(MainColor))
+
+// PowerbarPath is the style for the path segment in the power bar. Dim background, muted text
+// so the path does not compete with the mode label.
+var PowerbarPath = lipgloss.NewStyle().
+	Background(lipgloss.Color(DimColor)).
+	Foreground(lipgloss.Color(MutedColor))
+
+// PowerbarSep is the style for segment separators in the power bar. The foreground is set to
+// the same color as the left segment's background so the separator blends into it. The
+// background is set to the next segment's background so it points into it. The zero value is
+// safe to use when the next background is DimColor.
+var PowerbarSep = lipgloss.NewStyle().
+	Foreground(lipgloss.Color(AccentColor)).
+	Background(lipgloss.Color(DimColor))
+
+// PowerbarGlyph is the style for the powerline glyph between segments when ShowPowerGlyphs is
+// true. The foreground renders in the left segment's background color and the background is the
+// right segment's background, so the glyph blends into the left and points into the right.
+var PowerbarGlyph = lipgloss.NewStyle().
+	Foreground(lipgloss.Color(AccentColor)).
+	Background(lipgloss.Color(DimColor))
+
+// PowerbarSepToAlt transitions from a regular dim segment to an alt segment.
+var PowerbarSepToAlt = lipgloss.NewStyle().
+	Foreground(lipgloss.Color(DimColor)).
+	Background(lipgloss.Color(DimAltColor))
+
+// PowerbarSepFromAlt transitions from an alt segment back to a regular dim segment.
+var PowerbarSepFromAlt = lipgloss.NewStyle().
+	Foreground(lipgloss.Color(DimAltColor)).
+	Background(lipgloss.Color(DimColor))
+
+// PowerbarGlyphToAlt is the nerdfont version of PowerbarSepToAlt.
+var PowerbarGlyphToAlt = lipgloss.NewStyle().
+	Foreground(lipgloss.Color(DimColor)).
+	Background(lipgloss.Color(DimAltColor))
+
+// PowerbarGlyphFromAlt is the nerdfont version of PowerbarSepFromAlt.
+var PowerbarGlyphFromAlt = lipgloss.NewStyle().
+	Foreground(lipgloss.Color(DimAltColor)).
+	Background(lipgloss.Color(DimColor))
+
+// Bold wraps text in bold weight without changing color.
+func Bold(text string) string {
+	return lipgloss.NewStyle().Bold(true).Render(text)
+}
+
+// CenterBox renders text centred both horizontally and vertically within the given dimensions.
+func CenterBox(text string, width, height int) string {
+	return lipgloss.NewStyle().
+		Width(width).
+		Height(height).
+		Align(lipgloss.Center, lipgloss.Center).
+		Render(text)
+}
+
+// CenterText formats a single line of text centred within a fixed width. Used for the help
+// footer and any other one-line centred display.
+func CenterText(text string, width int) string {
+	return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(text)
+}
+
+// SepString renders a separator glyph between two background colors. fromBg is the background
+// of the segment the visual comes from, toBg is the background of the segment it points into.
+// Either can be empty to leave that side transparent (the terminal background shows through).
+func SepString(glyph, fromBg, toBg string) string {
+	st := lipgloss.NewStyle()
+	if fromBg != "" {
+		st = st.Foreground(lipgloss.Color(fromBg))
+	}
+	if toBg != "" {
+		st = st.Background(lipgloss.Color(toBg))
+	}
+	return st.Render(glyph)
+}
 
 // HelpKey is the style for the key part of the help footer.
 var HelpKey = lipgloss.NewStyle().Foreground(lipgloss.Color(ActiveColor))

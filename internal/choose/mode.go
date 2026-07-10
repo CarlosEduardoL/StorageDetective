@@ -73,6 +73,7 @@ func (ch *Choose) Update(ctx *core.Context, msg tea.Msg) (core.Mode, tea.Cmd) {
 
 // Help returns the choose key bindings for the help footer.
 func (ch *Choose) Help() help.KeyMap { return chooseKeys }
+func (ch *Choose) Name() string      { return "choose" }
 
 // NewPicker returns a Choose dialog pre configured from a Pickeable value's Options. When the
 // user confirms a selection the value is written directly to ptr. after is called after the

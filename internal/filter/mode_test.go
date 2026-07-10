@@ -8,6 +8,7 @@ import (
 
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
+	"github.com/SolracHQ/stex/internal/layout"
 	"github.com/SolracHQ/stex/internal/styles"
 	"github.com/SolracHQ/stex/internal/testutil"
 	"github.com/SolracHQ/stex/internal/vfs"
@@ -37,14 +38,14 @@ func newCtx(t *testing.T) *core.Context {
 	tbl := table.New(table.WithFocused(true), table.WithStyles(styles.TableDefault()))
 	cfg := config.DefaultConfig()
 	cfg.LiveFilter = true
-	return &core.Context{
-		Width:   120,
-		Height:  30,
+	ctx := &core.Context{
 		Root:    root,
 		Current: root,
 		Config:  cfg,
 		Table:   tbl,
 	}
+	ctx.SetScreen(layout.New(0, 0, 120, 30))
+	return ctx
 }
 
 var sentinel core.Mode = testutil.StubMode{}

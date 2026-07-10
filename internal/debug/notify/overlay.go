@@ -33,7 +33,7 @@ func (m *Mode) Overlay(ctx *core.Context) string {
 	}
 
 	content := strings.Join(lines, "\n")
-	width := min(45, ctx.Width-4)
+	width := min(45, ctx.Screen().Width-2)
 	return styles.DialogBorder.Width(width).Render(content)
 }
 

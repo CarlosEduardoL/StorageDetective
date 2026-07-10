@@ -8,7 +8,7 @@ import (
 const overlayPadX = 8
 
 func (cmd *Command) Overlay(ctx *core.Context) string {
-	width := max(1, min(60, ctx.Width-4))
+	width := max(1, min(60, ctx.Screen().Width-2))
 	cmd.input.SetWidth(width - overlayPadX)
 
 	s := cmd.input.Styles()

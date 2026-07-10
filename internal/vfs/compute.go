@@ -39,7 +39,7 @@ func (dir *Dir) ComputeItems(cfg config.Config) []FileSystemItem {
 		})
 	}
 
-	if dir.ParentDir() != nil {
+	if dir.ParentDir() != nil && cfg.ShowParentLink {
 		items = append([]FileSystemItem{NewUpLink(dir.ParentDir())}, items...)
 	}
 

@@ -92,12 +92,15 @@ var commands = map[string]cmdDef{
 		},
 	},
 	"toggle": {
-		args: []string{"icons", "hidden", "live"},
+		args: []string{"icons", "power", "hidden", "live"},
 		run: func(ctx *core.Context, arg string, returnTo core.Mode) (core.Mode, tea.Cmd) {
 			switch arg {
 			case "icons":
 				ctx.Config.ShowIcons = !ctx.Config.ShowIcons
 				return returnTo, core.NewNotifyCmd("Icons", core.BoolLabel(ctx.Config.ShowIcons), core.NotifyInfo)
+			case "power":
+				ctx.Config.ShowPowerGlyphs = !ctx.Config.ShowPowerGlyphs
+				return returnTo, core.NewNotifyCmd("Power glyphs", core.BoolLabel(ctx.Config.ShowPowerGlyphs), core.NotifyInfo)
 			case "hidden":
 				ctx.Config.ShowHidden = !ctx.Config.ShowHidden
 				return returnTo, core.NewNotifyCmd("Hidden files", core.BoolLabel(ctx.Config.ShowHidden), core.NotifyInfo)
@@ -233,6 +236,7 @@ func (cmd *Command) refreshSuggestions(value string) {
 
 // Help returns the command key bindings for the help footer.
 func (cmd *Command) Help() help.KeyMap { return commandKeys }
+func (cmd *Command) Name() string      { return "command" }
 
 func runCommand(ctx *core.Context, value string, returnTo core.Mode) (core.Mode, tea.Cmd) {
 	parts := splitFields(value)

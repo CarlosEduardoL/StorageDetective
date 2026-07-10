@@ -1,12 +1,13 @@
 package settings
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
 	"github.com/SolracHQ/stex/internal/styles"
+
+	"charm.land/lipgloss/v2"
 )
 
 func (settings *Settings) Overlay(ctx *core.Context) string {
@@ -23,7 +24,7 @@ func (settings *Settings) Overlay(ctx *core.Context) string {
 
 func renderRows(cfg *config.Config, cursor int) string {
 	rows := rowDefs(cfg)
-	var b strings.Builder
+	var rendered []string
 	for i, r := range rows {
 		marker := "  "
 		nameStyle := styles.Muted
@@ -31,12 +32,12 @@ func renderRows(cfg *config.Config, cursor int) string {
 			marker = styles.BoldAccent.Render("▶ ")
 			nameStyle = styles.BoldAccent
 		}
-		name := nameStyle.Render(padRight(r.name, 12))
+		name := nameStyle.Render(r.name)
+		padded := lipgloss.NewStyle().Width(12).Render(name)
 		value := styles.Main.Render(r.value)
-		fmt.Fprintf(&b, "%s%s  %s", marker, name, value)
-		b.WriteString("\n")
+		rendered = append(rendered, marker+padded+"  "+value)
 	}
-	return strings.TrimRight(b.String(), "\n")
+	return strings.Join(rendered, "\n")
 }
 
 func rowDefs(cfg *config.Config) []struct {
@@ -51,18 +52,12 @@ func rowDefs(cfg *config.Config) []struct {
 		{"order", orderLabel(cfg.SortOrder)},
 		{"group", config.GroupingString(cfg.Grouping)},
 		{"icons", core.BoolLabel(cfg.ShowIcons)},
+		{"glyphs", core.BoolLabel(cfg.ShowPowerGlyphs)},
 		{"hidden", core.BoolLabel(cfg.ShowHidden)},
 		{"live filter", core.BoolLabel(cfg.LiveFilter)},
 		{"notify level", cfg.NotifyLevel.PickLabel()},
 		{"notify time", cfg.NotifyTimeout.PickLabel()},
 	}
-}
-
-func padRight(s string, n int) string {
-	if len(s) >= n {
-		return s
-	}
-	return s + strings.Repeat(" ", n-len(s))
 }
 
 func sortLabel(s config.SortBy) string {

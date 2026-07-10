@@ -7,6 +7,8 @@ import (
 	"github.com/SolracHQ/stex/internal/core"
 	"github.com/SolracHQ/stex/internal/styles"
 	"github.com/SolracHQ/stex/internal/vfs"
+
+	"charm.land/lipgloss/v2"
 )
 
 // Layout constants for the progress dialog. progressOverhead is the number of lines the
@@ -49,7 +51,9 @@ func progressBody(state *vfs.ScanState, width, height int) string {
 	body.WriteString("\n\n")
 
 	items := commaFormat(total)
-	fmt.Fprintf(&body, " %-13s%s    %s: %s", styles.Dim.Render("Total items:"), styles.Main.Render(items), styles.Dim.Render("size"), styles.Main.Render(fmt.Sprintf("%s", totalSize)))
+	label := lipgloss.NewStyle().Width(13).Align(lipgloss.Left).Render(styles.Dim.Render("Total items:"))
+	body.WriteString(" " + label + styles.Main.Render(items) + "    ")
+	body.WriteString(styles.Dim.Render("size") + ": " + styles.Main.Render(totalSize.String()))
 	body.WriteString("\n")
 
 	path := currentPath
@@ -57,22 +61,17 @@ func progressBody(state *vfs.ScanState, width, height int) string {
 	if len(path) > maxPath {
 		path = shortenPath(path, maxPath)
 	}
-	body.WriteString(" ")
-
-	body.WriteString(styles.Muted.Render(path))
-	body.WriteString("\n")
+	body.WriteString(" " + styles.Muted.Render(path) + "\n")
 
 	if totalWarnings > 0 {
 		body.WriteString("\n")
 		avail := max(height-progressOverhead, 1)
-		fmt.Fprintf(&body, " %s", styles.BoldAccent.Render(fmt.Sprintf("WARNING: %d %s - sizes may be inaccurate", totalWarnings, core.Plural("error", totalWarnings))))
-		body.WriteString("\n")
+		body.WriteString(" " + styles.BoldAccent.Render(fmt.Sprintf("WARNING: %d %s - sizes may be inaccurate", totalWarnings, core.Plural("error", totalWarnings))) + "\n")
 
 		start := 0
 		if totalWarnings > avail {
 			start = totalWarnings - avail + 1
-			fmt.Fprintf(&body, " %s", styles.Muted.Render(fmt.Sprintf("... (%d more) ...", totalWarnings-avail)))
-			body.WriteString("\n")
+			body.WriteString(" " + styles.Muted.Render(fmt.Sprintf("... (%d more) ...", totalWarnings-avail)) + "\n")
 		}
 		for i := start; i < totalWarnings; i++ {
 			warning := warnings[i]
@@ -80,8 +79,7 @@ func progressBody(state *vfs.ScanState, width, height int) string {
 			if len(warning) > maxW {
 				warning = warning[:maxW]
 			}
-			fmt.Fprintf(&body, " %s", styles.Dim.Render(warning))
-			body.WriteString("\n")
+			body.WriteString(" " + styles.Dim.Render(warning) + "\n")
 		}
 		body.WriteString("\n")
 	} else {
@@ -90,13 +88,7 @@ func progressBody(state *vfs.ScanState, width, height int) string {
 
 	body.WriteString(styles.Muted.Render(" Press ctrl+c to abort"))
 
-	lines := strings.Split(body.String(), "\n")
-	for i, line := range lines {
-		if len(line) < width {
-			lines[i] = line + strings.Repeat(" ", width-len(line))
-		}
-	}
-	return strings.Join(lines, "\n")
+	return lipgloss.NewStyle().Width(width).Render(body.String())
 }
 
 // commaFormat formats an int64 with comma thousands separators. "12345" becomes "12,345".

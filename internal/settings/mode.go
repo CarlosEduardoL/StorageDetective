@@ -18,6 +18,7 @@ const (
 	rowOrder
 	rowGroup
 	rowIcons
+	rowPowerGlyphs
 	rowHidden
 	rowLiveFilter
 	rowNotifyLevel
@@ -92,6 +93,8 @@ func (settings *Settings) Help() help.KeyMap {
 	return settingsKeys
 }
 
+func (settings *Settings) Name() string { return "settings" }
+
 // applyFocused either toggles the focused field or opens the grouping picker for the group
 // row. Returns the new mode when the grouping picker is opened, nil otherwise.
 func (settings *Settings) applyFocused(ctx *core.Context) core.Mode {
@@ -104,6 +107,8 @@ func (settings *Settings) applyFocused(ctx *core.Context) core.Mode {
 		return choose.NewPicker("Group By", &ctx.Config.Grouping, settings, core.Rebuild)
 	case rowIcons:
 		ctx.Config.ShowIcons = !ctx.Config.ShowIcons
+	case rowPowerGlyphs:
+		ctx.Config.ShowPowerGlyphs = !ctx.Config.ShowPowerGlyphs
 	case rowHidden:
 		ctx.Config.ShowHidden = !ctx.Config.ShowHidden
 	case rowLiveFilter:

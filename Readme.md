@@ -31,6 +31,7 @@ Defaults to the current directory when no path is given.
 | Flag | Short | Description |
 | --- | --- | --- |
 | `--icons` | `-i` | start with emoji icons enabled |
+| `--power-glyphs` | `-g` | start with powerline glyphs in the power bar |
 | `--show-all` | `-a` | start with hidden files shown |
 | `--no-live-filter` | `-L` | disable live filter (compile on enter) |
 | `--help` | `-h` | show this help |
@@ -47,20 +48,11 @@ the keybindings and the overlay, reducing the amount of keybindings per mode.
 Explorer mode is the main app mode. It allows you to navigate the filesystem
 subtree and select items to act over. It is focused completely on movement,
 allowing three kinds of movement sets, hjkl for vim users, arrows for
-traditionalists and awsd for gamers.
+traditionalists and awsd for gamers. On wide terminals a right panel shows
+file metadata like name, size, permissions, mod time and MIME type plus the
+largest children when viewing directories.
 
-| Key | Action |
-| --- | --- |
-| `↑`/`k`/`w` | move up |
-| `↓`/`j`/`s` | move down |
-| `→`/`l`/`d` | open directory |
-| `←`/`h`/`a` | go to parent |
-| `/` | filter mode |
-| `:` | command mode |
-| `S` | settings panel |
-| `c` | clear filter |
-| `?` | toggle help |
-| `ctrl+c` | quit |
+See the full keybinding list in [docs/explorer_keymap.md](docs/explorer_keymap.md).
 
 #### Filter Mode
 
@@ -70,48 +62,37 @@ navigation is suspended. The list narrows in real time as you type. On slower
 machines you can disable live filter with the `--no-live-filter` flag or toggle
 it at runtime with `ctrl+l`, in manual mode the filter only compiles on enter.
 
-| Key | Action |
-| --- | --- |
-| type a character | append to the pattern and filter live |
-| `backspace` | remove the last character |
-| `enter` | keep the filter and return to explorer |
-| `esc` | clear the filter and return to explorer |
-| `ctrl+l` | toggle live filter |
+See the full keybinding list in [docs/filter_keymap.md](docs/filter_keymap.md).
 
 #### Settings Panel
 
 Settings panel is the UI to customize the app behavior. You can toggle sort,
-order, grouping, icons, hidden files and live filter. It is the same
-configuration you can do via CLI flags or command mode, just in a friendly
-menu. There are plans to add UI theme customization in the future.
+order, grouping, icons, hidden files, live filter, notify level and notify
+timeout. It is the same configuration you can do via CLI flags or command
+mode, just in a friendly menu.
 
-| Key | Action |
-| --- | --- |
-| `↑`/`k`/`w` | move up |
-| `↓`/`j`/`s` | move down |
-| `tab` | toggle focused row |
-| `enter` | close and keep changes |
-| `r` | reset to defaults |
-| `S` | save defaults to config file |
-| `esc` | revert and cancel |
+See the full keybinding list in [docs/settings_keymap.md](docs/settings_keymap.md).
 
 #### Command Mode
 
 Command mode is the command centric way to configure the app, allowing
 everything the settings panel does but purely through commands, like a command
 palette in any code editor. The idea is for it to grow into a more powerful
-tool to navigate and act on the filesystem without leaving the keyboard. See
-the full command list in [docs/commands.md](docs/commands.md). I even borrowed
-`:q` to quit, old habits die hard.
+tool to navigate and act on the filesystem without leaving the keyboard. I even
+borrowed `:q` to quit, old habits die hard. Every command shows a notification
+confirming what it did, if you are using stex in a dumb terminal you can
+disable or lower the verbosity in the settings panel.
 
-| Key | Action |
-| --- | --- |
-| type | write the command |
-| `tab` | accept suggestion |
-| `enter` | run the command |
-| `↑`/`k`/`w` | previous suggestion |
-| `↓`/`j`/`s` | next suggestion |
-| `esc` | cancel |
+See the full command list in [docs/commands.md](docs/commands.md) and the
+keybinding list in [docs/command_keymap.md](docs/command_keymap.md).
+
+### Notifications
+
+stex shows a small box at the top right when something happens, like a command
+executed, a setting changed, an error or simply a confirmation that the config
+was saved. The notification auto dismisses after a configurable timeout and you
+can also dismiss it immediately with esc. The verbosity level can be set in the
+settings panel or config file from all (default) to off.
 
 ## Configuration
 
@@ -124,13 +105,19 @@ culprit.
 
 ## Architecture
 
-stex uses a mode architecture borrowed from nvim. The app owns a shared
-Context that holds the file tree, configuration and the table widget. Each
-mode defines its own keybindings and draws an optional overlay on top of the
-base view. The base view (table, info pane, title, footer) is drawn by the app
-once per frame, the active mode composites its overlay on top. This keeps the
-explorer lean and makes adding new features a matter of writing a new mode
-package.
+stex uses a mode architecture that is in essence a finite state machine of
+states. Modes control three things: the overlay showing at that moment, the
+event processing (the app forwards non global events to the mode), and the
+mode transitions, any mode can transition to any other.
+
+The main app manages the long running tasks like notifications, the app wise
+events like global help toggle or quit, and the base view composition with the
+mode overlay on top. The communication between modes and the app is through
+commands and messages using the standard bubbletea mechanism. Modes handle
+sync operations and mutate the base state, they delegate async operations to
+the app. Each mode has its own keybindings and the app is in charge of
+updating the help widget with the current mode bindings alongside the global
+ones.
 
 ## License
 

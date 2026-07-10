@@ -2,12 +2,14 @@ package core
 
 import (
 	"fmt"
+	"image/color"
 	"math"
 
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/vfs"
 
 	"charm.land/bubbles/v2/table"
+	"charm.land/lipgloss/v2"
 )
 
 // Column widths used when building the table columns.
@@ -18,8 +20,7 @@ const (
 
 // buildColumns sets the table column headers and widths based on the sort direction.
 func buildColumns(ctx *Context) {
-	innerWidth := ctx.Width - 2
-	nameWidth := max(innerWidth-sizePctWidth-sizeWidth, 1)
+	nameWidth := max(ctx.Screen().Width-sizePctWidth-sizeWidth, 1)
 
 	var sizeLabel, nameLabel string
 	switch ctx.Config.SortBy {
@@ -73,35 +74,35 @@ func itemToRow(item vfs.FileSystemItem, showIcons bool, parent *vfs.Dir) table.R
 // buildRow formats a single data row for the table.
 func buildRow(name, emoji string, size, parentSize vfs.Size, showIcons bool) table.Row {
 	percent := size.PercentOf(parentSize)
-	gradientCode := gradientANSI(percent)
+	color := gradientColor(percent)
+	style := lipgloss.NewStyle().Foreground(color)
 	if showIcons {
 		name = emoji + " " + name
 	}
 	return table.Row{
-		gradientCode + fmt.Sprintf("%5.2f%%", percent) + "\033[39m",
-		gradientCode + size.String() + " \033[39m",
+		style.Render(fmt.Sprintf("%5.2f%%", percent)),
+		style.Render(size.String() + " "),
 		name + " ",
 	}
 }
 
-// gradientANSI returns an ANSI escape sequence that sets the foreground to a yellow-to-red
-// color based on the ratio. 0% is green, 50% is yellow, 100% is red.
-func gradientANSI(percent float64) string {
+// gradientColor returns a lipgloss color from green (0%) → yellow (50%) → red (100%).
+func gradientColor(percent float64) color.Color {
 	if percent < 0 {
 		percent = 0
 	}
 	if percent > 100 {
 		percent = 100
 	}
-	var red, green int
+	var r, g int
 	if percent <= 50 {
-		factor := percent / 50.0
-		red = int(math.Round(255 * factor))
-		green = 255
+		f := percent / 50.0
+		r = int(math.Round(255 * f))
+		g = 255
 	} else {
-		factor := (percent - 50) / 50.0
-		red = 255
-		green = int(math.Round(255 * (1 - factor)))
+		f := (percent - 50) / 50.0
+		r = 255
+		g = int(math.Round(255 * (1 - f)))
 	}
-	return fmt.Sprintf("\033[38;2;%d;%d;0m", red, green)
+	return lipgloss.Color(fmt.Sprintf("#%02x%02x00", r, g))
 }

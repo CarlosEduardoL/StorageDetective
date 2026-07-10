@@ -4,10 +4,12 @@ import (
 	"testing"
 
 	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
 	"github.com/SolracHQ/stex/internal/explorer"
-	"github.com/SolracHQ/stex/internal/testutil"
+	"github.com/SolracHQ/stex/internal/layout"
+	"github.com/SolracHQ/stex/internal/styles"
 	"github.com/SolracHQ/stex/internal/vfs"
 
 	tea "charm.land/bubbletea/v2"
@@ -53,15 +55,26 @@ func TestAppTableFocusedAtStart(t *testing.T) {
 }
 
 func TestAppHandlesResizeBeforeInit(t *testing.T) {
+	ctx := &core.Context{}
+	ctx.SetScreen(layout.New(0, 0, 80, 24))
 	a := &App{
-		ctx:  &core.Context{Width: 80, Height: 24},
-		mode: testutil.StubMode{},
+		ctx:    ctx,
+		screen: layout.New(0, 0, 80, 24),
+		help:   styles.HelpDefaults(),
+		mode:   &fakeMode{},
 	}
 	_, _ = a.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	if a.ctx.Width != 120 || a.ctx.Height != 40 {
-		t.Fatalf("expected dims 120x40, got %dx%d", a.ctx.Width, a.ctx.Height)
+	if a.ctx.Screen().Width != 118 {
+		t.Fatalf("expected content width 118, got %d", a.ctx.Screen().Width)
 	}
+
 }
+
+// emptyKeyMap is a help.KeyMap implementation with no bindings.
+type emptyKeyMap struct{}
+
+func (emptyKeyMap) ShortHelp() []key.Binding  { return []key.Binding{} }
+func (emptyKeyMap) FullHelp() [][]key.Binding { return [][]key.Binding{} }
 
 // fakeMode is a test mode that returns next from Update, used to verify the app installs the
 // returned mode and runs its Init.
@@ -77,16 +90,21 @@ func (f *fakeMode) Update(_ *core.Context, _ tea.Msg) (core.Mode, tea.Cmd) {
 
 func (f *fakeMode) Overlay(_ *core.Context) string { return "" }
 
-func (f *fakeMode) Help() help.KeyMap { return nil }
+func (f *fakeMode) Help() help.KeyMap { return emptyKeyMap{} }
+func (f *fakeMode) Name() string      { return "fake" }
 
 func TestAppSwapsModeWhenReturned(t *testing.T) {
+	ctx := &core.Context{}
+	ctx.SetScreen(layout.New(0, 0, 80, 24))
 	a := &App{
-		ctx:  &core.Context{Width: 80, Height: 24},
-		mode: &fakeMode{next: testutil.StubMode{}},
+		ctx:    ctx,
+		screen: layout.New(0, 0, 80, 24),
+		help:   styles.HelpDefaults(),
+		mode:   &fakeMode{next: &fakeMode{}},
 	}
 	_, _ = a.Update(nil)
-	if _, ok := a.mode.(testutil.StubMode); !ok {
-		t.Fatalf("expected mode swap to testutil.StubMode, got %T", a.mode)
+	if _, ok := a.mode.(*fakeMode); !ok {
+		t.Fatalf("expected mode swap to *fakeMode, got %T", a.mode)
 	}
 }
 

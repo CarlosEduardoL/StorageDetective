@@ -28,6 +28,14 @@ run *args: build
 test:
     go test ./...
 
+# run all tests in a container
+test-container:
+    podman run --rm -v {{justfile_directory()}}:/stex:Z -w /stex golang:1.26 go test ./...
+
+# run a specific test in a container, e.g. `just testone-container TestExplorer_RebuildPopulatesItems`
+testone-container name:
+    podman run --rm -v {{justfile_directory()}}:/stex:Z -w /stex golang:1.26 go test -run '{{name}}' ./...
+
 # run a specific test, e.g. `just testone TestExplorer_RebuildPopulatesItems`
 testone name:
     go test -run '{{name}}' ./...

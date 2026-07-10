@@ -21,4 +21,5 @@ type Mode interface {
 	Update(ctx *Context, msg tea.Msg) (Mode, tea.Cmd)
 	Overlay(ctx *Context) string
 	Help() help.KeyMap
+	Name() string
 }

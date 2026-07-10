@@ -8,7 +8,7 @@ import (
 )
 
 func (ch *Choose) Overlay(ctx *core.Context) string {
-	width := max(1, min(60, ctx.Width-4))
+	width := max(1, min(60, ctx.Screen().Width-2))
 
 	var rows []string
 	for i, opt := range ch.options {

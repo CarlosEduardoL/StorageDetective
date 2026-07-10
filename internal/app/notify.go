@@ -18,8 +18,8 @@ const (
 	notifyMargin    = 2
 )
 
-// RenderNotify renders the notification box with the given text and severity.
-func RenderNotify(text, detail string, severity core.NotifySeverity) string {
+// renderNotify renders the notification box.
+func renderNotify(text, detail string, severity core.NotifySeverity) string {
 	severityLabel := severity.String()
 
 	topBorder := renderTopBorder(severityLabel, severity)
@@ -48,9 +48,8 @@ func RenderNotify(text, detail string, severity core.NotifySeverity) string {
 	return strings.Join(contentLines, "\n")
 }
 
-// OverlayNotify composites the notification box over the background content, placing it in a
-// fixed position so it is visible without displacing the base view.
-func OverlayNotify(background string, toast string) string {
+// overlayNotify composites the notification box over the background content.
+func overlayNotify(background string, toast string) string {
 	if toast == "" || background == "" {
 		return background
 	}

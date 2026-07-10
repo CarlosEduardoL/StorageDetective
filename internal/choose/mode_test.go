@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/SolracHQ/stex/internal/core"
+	"github.com/SolracHQ/stex/internal/layout"
 	"github.com/SolracHQ/stex/internal/testutil"
 
 	tea "charm.land/bubbletea/v2"
@@ -80,7 +81,8 @@ func TestChooseViewNonEmpty(t *testing.T) {
 		{Label: "Yes"},
 		{Label: "No"},
 	}, nil)
-	ctx := &core.Context{Width: 80, Height: 24}
+	ctx := &core.Context{}
+	ctx.SetScreen(layout.New(0, 0, 80, 24))
 	v := c.Overlay(ctx)
 	if v == "" {
 		t.Fatal("expected non-empty view")
@@ -92,7 +94,8 @@ func TestChooseViewContainsOptions(t *testing.T) {
 		{Label: "AlphaOption"},
 		{Label: "BetaOption"},
 	}, nil)
-	ctx := &core.Context{Width: 80, Height: 24}
+	ctx := &core.Context{}
+	ctx.SetScreen(layout.New(0, 0, 80, 24))
 	v := c.Overlay(ctx)
 	if !strings.Contains(v, "AlphaOption") {
 		t.Error("expected view to contain AlphaOption")

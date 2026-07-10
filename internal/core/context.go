@@ -9,32 +9,48 @@ package core
 
 import (
 	"github.com/SolracHQ/stex/internal/config"
+	"github.com/SolracHQ/stex/internal/layout"
 	"github.com/SolracHQ/stex/internal/vfs"
 
-	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/table"
 )
 
 // Context is the mutable state bag passed to every mode. Modes read and write the fields
-// directly. The shared widget models (Table, Help, Spinner) and the scanned tree (Root, Current)
-// live here so a mode transition does not need to rebuild them.
+// directly. The scanned tree (Root, Current) lives here so a mode transition does not need to
+// rebuild it.
 type Context struct {
-	Width, Height int
-	Path          string
+	screen layout.Rect // set by SetScreen, read via Screen()
+	Path   string
 
 	Root, Current *vfs.Dir
 	Config        config.Config
 
+	// Table widget, sized by SetScreen. Modes may scroll or resize it.
 	Table table.Model
-	Info  InfoState
+	Info  InfoState // cached right pane content
 	Items []vfs.FileSystemItem
-
-	Help help.Model
 }
 
-// InfoState holds the cached right pane content. Tracking the path lets the explorer skip
-// re rendering when the cursor has not moved.
+// InfoState holds the cached right pane stat result and current layout bounds.
 type InfoState struct {
-	Path    string
-	Content string
+	Path   string // cursor path, for stat cache
+	file   *FileInfo
+	Bounds layout.Rect // info panel bounds, set by SetScreen
+}
+
+// Screen returns the content area rectangle.
+func (ctx *Context) Screen() layout.Rect { return ctx.screen }
+
+// SetScreen updates the content area, table dimensions, and info pane layout.
+func (ctx *Context) SetScreen(s layout.Rect) {
+	ctx.screen = s
+	if s.Width >= SplitViewThreshold {
+		ctx.Info.Bounds = s.ShrinkSides(s.Width/2, 0, 0, 0)
+	} else {
+		ctx.Info.Bounds = layout.Rect{}
+	}
+	if s.Width > 0 && s.Height > 0 {
+		ctx.Table.SetWidth(s.Width)
+		ctx.Table.SetHeight(s.Height)
+	}
 }

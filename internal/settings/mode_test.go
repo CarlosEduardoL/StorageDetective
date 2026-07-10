@@ -7,6 +7,7 @@ import (
 
 	"github.com/SolracHQ/stex/internal/config"
 	"github.com/SolracHQ/stex/internal/core"
+	"github.com/SolracHQ/stex/internal/layout"
 	"github.com/SolracHQ/stex/internal/styles"
 	"github.com/SolracHQ/stex/internal/testutil"
 	"github.com/SolracHQ/stex/internal/vfs"
@@ -34,13 +35,12 @@ func newCtx(t *testing.T) *core.Context {
 	root := buildTestTree(t)
 	tbl := table.New(table.WithFocused(true), table.WithStyles(styles.TableDefault()))
 	ctx := &core.Context{
-		Width:   120,
-		Height:  30,
 		Root:    root,
 		Current: root,
 		Config:  config.DefaultConfig(),
 		Table:   tbl,
 	}
+	ctx.SetScreen(layout.New(0, 0, 120, 30))
 	s := New(testutil.StubMode{})
 	_ = s.Init(ctx)
 	return ctx

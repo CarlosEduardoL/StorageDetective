@@ -56,22 +56,26 @@ type Config struct {
 	LiveFilter bool           `json:"live_filter"`
 	Filter     *regexp.Regexp `json:"-"`
 
-	NotifyLevel   NotifyLevel   `json:"notify_level"`
-	NotifyTimeout NotifyTimeout `json:"notify_timeout"`
+	NotifyLevel     NotifyLevel   `json:"notify_level"`
+	NotifyTimeout   NotifyTimeout `json:"notify_timeout"`
+	ShowPowerGlyphs bool          `json:"show_power_glyphs"`
+	ShowParentLink  bool          `json:"show_parent_link"`
 }
 
 // DefaultConfig returns the starting state for a first run, largest items first so the user
 // immediately sees what is taking the most space.
 func DefaultConfig() Config {
 	return Config{
-		SortBy:        SortBySize,
-		SortOrder:     Descending,
-		Grouping:      Mixed,
-		ShowIcons:     false,
-		ShowHidden:    false,
-		LiveFilter:    true,
-		NotifyLevel:   NotifyAll,
-		NotifyTimeout: 3,
+		SortBy:          SortBySize,
+		SortOrder:       Descending,
+		Grouping:        Mixed,
+		ShowIcons:       false,
+		ShowHidden:      false,
+		LiveFilter:      true,
+		NotifyLevel:     NotifyAll,
+		NotifyTimeout:   3,
+		ShowPowerGlyphs: false,
+		ShowParentLink:  true,
 	}
 }
 
